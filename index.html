@@ -1,5 +1,118 @@
 <html>
-  <script src="terrain.js"></script>
-  Make sure we can see what we're generating, because that is the goal after all.
-  <canvas width="400" height="400"></canvas>
+  <head>
+    <style>
+      .step
+      {
+      background-color:#eee;
+      margin:.5em;
+      padding:.5em;
+      clear:both;
+      overflow:auto;
+      }
+      canvas{
+      float:right;
+      background-color:white;
+      border: thin black solid;
+      }
+    </style>
+    <script src="terrain.js"></script>
+    <script src="terrainUI.js"></script>
+    <script src="https://d3js.org/d3.v4.js"></script>
+
+  </head>
+<div style="float:right;">
+  <a href="https://xkcd.com/977/">
+  <img src="https://imgs.xkcd.com/comics/map_projections.png"  /></a>
+</div>
+  <p>Different kinds of projections that might get used.</p>
+  
+  <div class="step" style="display:inline-block;">
+    <p>Plate Carree Projection</p>
+    <canvas id="plate_carree" width="400" height="200" style="height:200px;width:400px;"></canvas>
+    <script>
+      var canvas = document.getElementById("plate_carree");
+      var ctx = canvas.getContext("2d");
+      //draw vertical lines
+      for (var i=1;i<=23;i++)
+      {
+      ctx.beginPath();
+      ctx.moveTo(400/24*i, 0);
+      ctx.lineTo(400/24*i, 200);
+      ctx.stroke();
+      }
+      //
+      for (var i=1;i<=11;i++)
+      {
+      ctx.beginPath();
+      ctx.moveTo(0, 200/12*i);
+      ctx.lineTo(400, 200/12*i);
+      ctx.stroke();
+      }
+    </script>
+  </div>
+  <div class="step" style="display:inline-block;">
+    <p>Robinson Projection</p>
+    <canvas id="robinson" width="400" height="200" style="height:200px;width:400px;"></canvas>
+    <script>
+      var canvas = document.getElementById("robinson");
+      var ctx = canvas.getContext("2d");
+      //draw vertical lines
+      for (var i=1;i<=23;i++)
+      {
+      ctx.beginPath();
+      ctx.moveTo(400/24*i, 0);
+      ctx.lineTo(400/24*i, 200);
+      ctx.stroke();
+      }
+      //horizontal lines
+      for (var i=1;i<=11;i++)
+      {
+      ctx.beginPath();
+      ctx.moveTo(0, 200/12*i);
+      ctx.lineTo(400, 200/12*i);
+      ctx.stroke();
+      }
+    </script>
+  </div>
+  <div class="step" style="display:inline-block;">
+    <p>Sphere</p>
+    <canvas id="sphere" width="400" height="200" style="height:200px;width:400px;"></canvas>
+    <script>
+      var canvas = document.getElementById("sphere");
+      var context = canvas.getContext("2d");
+      context.save();
+      context.beginPath();
+      var center_x=200;
+      var center_y=100;
+      var rotation=0;
+      var radius_a=100;
+      var radius_b=100;
+      context.translate(center_x, center_y);
+      context.rotate(rotation);
+      context.scale(radius_a, radius_b);
+      context.arc(0, 0, 1, 0, 2* Math.PI, false);
+      context.restore();
+      context.stroke();
+      
+    </script>
+  </div>
+  <div class="step" style="display:inline-block;">
+    <p>Flat World</p>
+    <canvas id="flat" width="400" height="200" style="height:200px;width:400px;"></canvas>
+    <script>
+      var canvas = document.getElementById("flat");
+      var context = canvas.getContext("2d");
+    </script>
+  </div>
+<!--lets just get on with it-->
+  <div class="step" style="display:inline-block;">
+    <p>Generate some points</p>
+    <canvas id="flatpoints" width="400" height="200" style="height:200px;width:400px;"></canvas>
+    <script>
+      var flatWorld=new TerrainUI(document.getElementById('flatpoints'));
+    </script>
+    <button onclick="flatWorld.generateAndVisualizePoints()">Generate Points</button>
+    <button onclick="flatWorld.improveAndVisualizePoints()">Improve Points</button>
+    
+  </div>
 </html>

@@ -1,5 +1,48 @@
 "use strict";
 
+function Terrain(extent){
+  "use strict";
+  var $this = this;
+  this.extent = extent || DEFAULT_EXTENT;
+  this.pts=[];
+
+  this.generatePoints=function(n) {
+    var n=n || 256;
+    this.pts = [];
+    for (var i = 0; i < n; i++) {
+        this.pts.push([(Math.random()-.5) * this.extent.width, (Math.random()-.5) * this.extent.height]);
+    }
+  };
+
+  this.improvePoints=function(n) {
+    var n=n || 1;
+    //console.log(this.pts);
+    for (var i = 0; i < n; i++) {
+        this.pts = $this.voronoi().polygons($this.pts).map($this.centroid);
+    }
+    //console.log(this.pts);
+  };
+
+  this.voronoi=function() {
+    var w = $this.extent.width/2;
+    var h = $this.extent.height/2;
+    //console.log($this.pts);
+    var a=d3.voronoi().extent([[-w, -h], [w, h]])($this.pts);
+    //console.log(a);
+    return a;
+  };
+
+  this.centroid=function(pts) {
+    var x = 0;
+    var y = 0;
+    for (var i = 0; i < pts.length; i++) {
+        x += pts[i][0];
+        y += pts[i][1];
+    }
+    return [x/pts.length, y/pts.length];
+  };
+}
+
 function runif(lo, hi) {
     return lo + Math.random() * (hi - lo);
 }
@@ -31,41 +74,6 @@ function randomVector(scale) {
     return [scale * rnorm(), scale * rnorm()];
 }
 
-var defaultExtent = {
-    width: 1,
-    height: 1
-};
-
-function generatePoints(n, extent) {
-    extent = extent || defaultExtent;
-    var pts = [];
-    for (var i = 0; i < n; i++) {
-        pts.push([(Math.random() - 0.5) * extent.width, (Math.random() - 0.5) * extent.height]);
-    }
-    return pts;
-}
-
-function centroid(pts) {
-    var x = 0;
-    var y = 0;
-    for (var i = 0; i < pts.length; i++) {
-        x += pts[i][0];
-        y += pts[i][1];
-    }
-    return [x/pts.length, y/pts.length];
-}
-
-function improvePoints(pts, n, extent) {
-    n = n || 1;
-    extent = extent || defaultExtent;
-    for (var i = 0; i < n; i++) {
-        pts = voronoi(pts, extent)
-            .polygons(pts)
-            .map(centroid);
-    }
-    return pts;
-}
-
 function generateGoodPoints(n, extent) {
     extent = extent || defaultExtent;
     var pts = generatePoints(n, extent);
@@ -73,13 +81,6 @@ function generateGoodPoints(n, extent) {
         return a[0] - b[0];
     });
     return improvePoints(pts, 1, extent);
-}
-
-function voronoi(pts, extent) {
-    extent = extent || defaultExtent;
-    var w = extent.width/2;
-    var h = extent.height/2;
-    return d3.voronoi().extent([[-w, -h], [w, h]])(pts);
 }
 
 function makeMesh(pts, extent) {
@@ -670,16 +671,7 @@ function relaxPath(path) {
     newpath.push(path[path.length - 1]);
     return newpath;
 }
-function visualizePoints(svg, pts) {
-    var circle = svg.selectAll('circle').data(pts);
-    circle.enter()
-        .append('circle');
-    circle.exit().remove();
-    d3.selectAll('circle')
-        .attr('cx', function (d) {return 1000*d[0]})
-        .attr('cy', function (d) {return 1000*d[1]})
-        .attr('r', 100 / Math.sqrt(pts.length));
-}
+
 
 function makeD3Path(path) {
     var p = d3.path();
@@ -1056,18 +1048,5 @@ function doMap(svg, params) {
     render.h = params.generator(params);
     placeCities(render);
     drawMap(svg, render);
-}
-
-var defaultParams = {
-    extent: defaultExtent,
-    generator: generateCoast,
-    npts: 16384,
-    ncities: 15,
-    nterrs: 5,
-    fontsizes: {
-        region: 40,
-        city: 25,
-        town: 20
-    }
 }
 
