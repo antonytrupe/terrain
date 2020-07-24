@@ -5,86 +5,18 @@ function Terrain(extent){
   var $this = this;
   this.extent = extent || DEFAULT_EXTENT;
   this.pts=[];
+  this.mesh={};
 
-  this.generatePoints=function(n) {
-    var n=n || 256;
-    this.pts = [];
-    for (var i = 0; i < n; i++) {
-        this.pts.push([(Math.random()-.5) * this.extent.width, (Math.random()-.5) * this.extent.height]);
-    }
-  };
-
-  this.improvePoints=function(n) {
-    var n=n || 1;
-    //console.log(this.pts);
-    for (var i = 0; i < n; i++) {
-        this.pts = $this.voronoi().polygons($this.pts).map($this.centroid);
-    }
-    //console.log(this.pts);
-  };
-
-  this.voronoi=function() {
-    var w = $this.extent.width/2;
-    var h = $this.extent.height/2;
-    //console.log($this.pts);
-    var a=d3.voronoi().extent([[-w, -h], [w, h]])($this.pts);
-    //console.log(a);
-    return a;
-  };
-
-  this.centroid=function(pts) {
-    var x = 0;
-    var y = 0;
-    for (var i = 0; i < pts.length; i++) {
-        x += pts[i][0];
-        y += pts[i][1];
-    }
-    return [x/pts.length, y/pts.length];
-  };
-}
-
-function runif(lo, hi) {
-    return lo + Math.random() * (hi - lo);
-}
-
-var rnorm = (function () {
-    var z2 = null;
-    function rnorm() {
-        if (z2 != null) {
-            var tmp = z2;
-            z2 = null;
-            return tmp;
-        }
-        var x1 = 0;
-        var x2 = 0;
-        var w = 2.0;
-        while (w >= 1) {
-            x1 = runif(-1, 1);
-            x2 = runif(-1, 1);
-            w = x1 * x1 + x2 * x2;
-        }
-        w = Math.sqrt(-2 * Math.log(w) / w);
-        z2 = x2 * w;
-        return x1 * w;
-    }
-    return rnorm;
-})();
-
-function randomVector(scale) {
-    return [scale * rnorm(), scale * rnorm()];
-}
-
-function generateGoodPoints(n, extent) {
-    extent = extent || defaultExtent;
-    var pts = generatePoints(n, extent);
+  this.generateGoodPoints=function() {
+    this.pts = this.generatePoints();
     pts = pts.sort(function (a, b) {
         return a[0] - b[0];
     });
-    return improvePoints(pts, 1, extent);
-}
+    this.improvePoints();
+  };
 
-function makeMesh(pts, extent) {
-    extent = extent || defaultExtent;
+  this.makeMesh=function (pts, extent) {
+    //extent = extent || defaultExtent;
     var vor = voronoi(pts, extent);
     var vxs = [];
     var vxids = {};
@@ -133,8 +65,96 @@ function makeMesh(pts, extent) {
         mapped.mesh = mesh;
         return mapped;
     }
+    //console.log(mesh);
+    this.mesh=mesh;
     return mesh;
+  };
+
+  this.zero=function (mesh) {
+    var z = [];
+    for (var i = 0; i < mesh.vxs.length; i++) {
+        z[i] = 0;
+    }
+    z.mesh = mesh;
+    return z;
+  };
+
+  this.copy=function(src){
+    //make a deep copy
+    this.pts=JSON.parse(JSON.stringify(src.pts));
+  };
+
+  this.generatePoints=function(n) {
+    var n=n || 256;
+    this.pts = [];
+    for (var i = 0; i < n; i++) {
+        this.pts.push([(Math.random()-.5) * this.extent.width, (Math.random()-.5) * this.extent.height]);
+    }
+  };
+
+  this.improvePoints=function(n) {
+    var n=n || 1;
+    //console.log(this.pts);
+    for (var i = 0; i < n; i++) {
+        this.pts = voronoi().polygons($this.pts).map(centroid);
+    }
+    //console.log(this.pts);
+  };
+
+  function voronoi() {
+    var w = $this.extent.width/2;
+    var h = $this.extent.height/2;
+    //console.log($this.pts);
+    var a=d3.voronoi().extent([[-w, -h], [w, h]])($this.pts);
+    //console.log(a);
+    return a;
+  }
+
+  function centroid(pts) {
+    var x = 0;
+    var y = 0;
+    for (var i = 0; i < pts.length; i++) {
+        x += pts[i][0];
+        y += pts[i][1];
+    }
+    return [x/pts.length, y/pts.length];
+  }
 }
+
+function runif(lo, hi) {
+    return lo + Math.random() * (hi - lo);
+}
+
+var rnorm = (function () {
+    var z2 = null;
+    function rnorm() {
+        if (z2 != null) {
+            var tmp = z2;
+            z2 = null;
+            return tmp;
+        }
+        var x1 = 0;
+        var x2 = 0;
+        var w = 2.0;
+        while (w >= 1) {
+            x1 = runif(-1, 1);
+            x2 = runif(-1, 1);
+            w = x1 * x1 + x2 * x2;
+        }
+        w = Math.sqrt(-2 * Math.log(w) / w);
+        z2 = x2 * w;
+        return x1 * w;
+    }
+    return rnorm;
+})();
+
+function randomVector(scale) {
+    return [scale * rnorm(), scale * rnorm()];
+}
+
+
+
+
 
 
 
@@ -179,14 +199,7 @@ function quantile(h, q) {
     return d3.quantile(sortedh, q);
 }
 
-function zero(mesh) {
-    var z = [];
-    for (var i = 0; i < mesh.vxs.length; i++) {
-        z[i] = 0;
-    }
-    z.mesh = mesh;
-    return z;
-}
+
 
 function slope(mesh, direction) {
     return mesh.map(function (x) {
@@ -682,24 +695,7 @@ function makeD3Path(path) {
     return p.toString();
 }
 
-function visualizeVoronoi(svg, field, lo, hi) {
-    if (hi == undefined) hi = d3.max(field) + 1e-9;
-    if (lo == undefined) lo = d3.min(field) - 1e-9;
-    var mappedvals = field.map(function (x) {return x > hi ? 1 : x < lo ? 0 : (x - lo) / (hi - lo)});
-    var tris = svg.selectAll('path.field').data(field.mesh.tris)
-    tris.enter()
-        .append('path')
-        .classed('field', true);
-    
-    tris.exit()
-        .remove();
 
-    svg.selectAll('path.field')
-        .attr('d', makeD3Path)
-        .style('fill', function (d, i) {
-            return d3.interpolateViridis(mappedvals[i]);
-        });
-}
 
 function visualizeDownhill(h) {
     var links = getRivers(h, 0.01);

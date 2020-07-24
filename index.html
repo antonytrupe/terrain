@@ -14,6 +14,13 @@
       background-color:white;
       border: thin black solid;
       }
+      button{
+        margin:.5em;
+        padding:.5em;
+        font-size: large;
+        border-radius: .5rem;
+        background-color: white;
+      }
     </style>
     <script src="terrain.js"></script>
     <script src="terrainUI.js"></script>
@@ -104,7 +111,8 @@
       var context = canvas.getContext("2d");
     </script>
   </div>
-<!--lets just get on with it-->
+
+  <!--lets just get on with it-->
   <div class="step" style="display:inline-block;">
     <p>Generate some points</p>
     <canvas id="flatpoints" width="400" height="200" style="height:200px;width:400px;"></canvas>
@@ -113,6 +121,20 @@
     </script>
     <button onclick="flatWorld.generateAndVisualizePoints()">Generate Points</button>
     <button onclick="flatWorld.improveAndVisualizePoints()">Improve Points</button>
-    
   </div>
+
+
+  <!--basic transformations-->
+  <div class="step" style="display:inline-block;">
+    <p>Show the mesh instead of the points</p>
+    <canvas id="basic" width="400" height="200" style="height:200px;width:400px;"></canvas>
+    <script>
+      var basic=new TerrainUI(document.getElementById('basic'));
+    </script>
+    <button onclick="basic.copyAndVisualizeMesh(flatWorld)">Copy from Above</button>
+    <button onclick="basic.generateAndVisualizeMesh()">Generate Mesh</button>
+<br />
+    <button onclick="basic.improveAndVisualizeMesh()">Improve Mesh</button>
+  </div>
+
 </html>

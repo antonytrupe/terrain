@@ -12,16 +12,40 @@ function TerrainUI(canvas,params)
   this.terrain=new Terrain(this.extent);
   this.generateAndVisualizePoints=function() {
     this.terrain.generatePoints();
+    this.clear();
     this.visualizePoints();
+  };
+
+  this.improveAndVisualizeMesh=function(){
+    this.terrain.improvePoints();
+    this.terrain.makeMesh();
+    this.clear();
+    this.visualizeVoronoi();
+  };
+
+  this.generateAndVisualizeMesh=function(){
+    this.terrain.generatePoints();
+    this.terrain.makeMesh();
+    this.clear();
+    this.visualizeVoronoi();
+  };
+
+  this.copyAndVisualizeMesh=function(src)
+  {
+    this.terrain.copy(src.terrain);
+    this.terrain.makeMesh();
+    //var primH = this.terrain.zero(mesh);
+    this.clear();
+    this.visualizeVoronoi();
   };
 
   this.improveAndVisualizePoints=function() {
     this.terrain.improvePoints();
+    this.clear();
     this.visualizePoints();
   };
 
-  this.visualizePoints=function () {
-    //console.log(this.terrain.pts);
+  this.clear=function(){
     var ctx = this.canvas.getContext("2d");
     // Store the current transformation matrix
     ctx.save();
@@ -30,6 +54,12 @@ function TerrainUI(canvas,params)
     ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     // Restore the transform
     ctx.restore();
+  };
+
+  this.visualizePoints=function () {
+    var ctx = this.canvas.getContext("2d");
+    
+    //console.log(this.terrain.mesh);
     this.terrain.pts.forEach(function(p) {
         //console.log(p);
         ctx.beginPath();
@@ -37,6 +67,24 @@ function TerrainUI(canvas,params)
         ctx.stroke();
         ctx.fill();
         ctx.closePath();
+    });
+  };
+
+  this.visualizeVoronoi=function () {
+    var ctx = this.canvas.getContext("2d"); 
+    var hi = d3.max(this.terrain.mesh) + 1e-9;
+    var lo = d3.min(this.terrain.mesh) - 1e-9; 
+
+    this.terrain.mesh.edges.forEach(function(e){
+      var a=e[2];
+      var b=e[3];
+      if(typeof a!='undefined' && typeof b!='undefined'){
+        //console.log(e);
+        ctx.beginPath();
+        ctx.moveTo((a[0]+.5)*400,(a[1]+.5)*200);
+        ctx.lineTo((b[0]+.5)*400,(b[1]+.5)*200);
+        ctx.stroke();
+      }
     });
   };
 }
