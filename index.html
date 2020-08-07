@@ -25,96 +25,14 @@
     <script src="terrain.js"></script>
     <script src="terrainUI.js"></script>
     <script src="https://d3js.org/d3.v4.js"></script>
+    <script src="https://d3js.org/d3-array.v1.min.js"></script>
+    <script src="https://d3js.org/d3-geo.v1.min.js"></script>
+    <script src="https://d3js.org/d3-geo-projection.v2.min.js"></script>
 
   </head>
-<div style="float:right;">
-  <a href="https://xkcd.com/977/">
-  <img src="https://imgs.xkcd.com/comics/map_projections.png"  /></a>
-</div>
-  <p>Different kinds of projections that might get used.</p>
-  
-  <div class="step" style="display:inline-block;">
-    <p>Plate Carree Projection</p>
-    <canvas id="plate_carree" width="400" height="200" style="height:200px;width:400px;"></canvas>
-    <script>
-      var canvas = document.getElementById("plate_carree");
-      var ctx = canvas.getContext("2d");
-      //draw vertical lines
-      for (var i=1;i<=23;i++)
-      {
-      ctx.beginPath();
-      ctx.moveTo(400/24*i, 0);
-      ctx.lineTo(400/24*i, 200);
-      ctx.stroke();
-      }
-      //
-      for (var i=1;i<=11;i++)
-      {
-      ctx.beginPath();
-      ctx.moveTo(0, 200/12*i);
-      ctx.lineTo(400, 200/12*i);
-      ctx.stroke();
-      }
-    </script>
-  </div>
-  <div class="step" style="display:inline-block;">
-    <p>Robinson Projection</p>
-    <canvas id="robinson" width="400" height="200" style="height:200px;width:400px;"></canvas>
-    <script>
-      var canvas = document.getElementById("robinson");
-      var ctx = canvas.getContext("2d");
-      //draw vertical lines
-      for (var i=1;i<=23;i++)
-      {
-      ctx.beginPath();
-      ctx.moveTo(400/24*i, 0);
-      ctx.lineTo(400/24*i, 200);
-      ctx.stroke();
-      }
-      //horizontal lines
-      for (var i=1;i<=11;i++)
-      {
-      ctx.beginPath();
-      ctx.moveTo(0, 200/12*i);
-      ctx.lineTo(400, 200/12*i);
-      ctx.stroke();
-      }
-    </script>
-  </div>
-  <div class="step" style="display:inline-block;">
-    <p>Sphere</p>
-    <canvas id="sphere" width="400" height="200" style="height:200px;width:400px;"></canvas>
-    <script>
-      var canvas = document.getElementById("sphere");
-      var context = canvas.getContext("2d");
-      context.save();
-      context.beginPath();
-      var center_x=200;
-      var center_y=100;
-      var rotation=0;
-      var radius_a=100;
-      var radius_b=100;
-      context.translate(center_x, center_y);
-      context.rotate(rotation);
-      context.scale(radius_a, radius_b);
-      context.arc(0, 0, 1, 0, 2* Math.PI, false);
-      context.restore();
-      context.stroke();
-      
-    </script>
-  </div>
-  <div class="step" style="display:inline-block;">
-    <p>Flat World</p>
-    <canvas id="flat" width="400" height="200" style="height:200px;width:400px;"></canvas>
-    <script>
-      var canvas = document.getElementById("flat");
-      var context = canvas.getContext("2d");
-    </script>
-  </div>
-
   <!--lets just get on with it-->
   <div class="step" style="display:inline-block;">
-    <p>Generate some points</p>
+    <p>Generate some points on a flat, bounded plane</p>
     <canvas id="flatpoints" width="400" height="200" style="height:200px;width:400px;"></canvas>
     <script>
       var flatWorld=new TerrainUI(document.getElementById('flatpoints'));
@@ -122,7 +40,6 @@
     <button onclick="flatWorld.generateAndVisualizePoints()">Generate Points</button>
     <button onclick="flatWorld.improveAndVisualizePoints()">Improve Points</button>
   </div>
-
 
   <!--basic transformations-->
   <div class="step" style="display:inline-block;">
@@ -133,8 +50,76 @@
     </script>
     <button onclick="basic.copyAndVisualizeMesh(flatWorld)">Copy from Above</button>
     <button onclick="basic.generateAndVisualizeMesh()">Generate Mesh</button>
-<br />
+    <br />
     <button onclick="basic.improveAndVisualizeMesh()">Improve Mesh</button>
+  </div>
+
+  <!--world projections-->
+  <div class="step" style="display:inline-block;">
+    <p>Sphere Projection</p>
+    <canvas id="sphere" width="400" height="200" style="height:200px;width:400px;"></canvas>
+    <script>
+var geojson = {
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Africa"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-6, 36], [33, 30], [43, 11], [51, 12], [29, -33], [18, -35], [7, 5], [-17, 14], [-6, 36]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Australia"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[143, -11], [153, -28], [144, -38], [131, -31], [116, -35], [114, -22], [136, -12], [140, -17], [143, -11]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Timbuktu"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-3.0026, 16.7666]
+      }
+    }
+  ]
+};
+
+var context = d3.select('#sphere')
+  .node()
+  .getContext('2d');
+
+var projection = d3.geoEquirectangular()
+  //.scale(50)
+  .translate([200, 150]);
+
+var geoGenerator = d3.geoPath()
+  .projection(projection)
+  .context(context);
+
+function update(geojson) {
+  context.lineWidth = 0.5;
+  context.strokeStyle = '#aaa';
+
+  context.beginPath();
+  geoGenerator({type: 'FeatureCollection', features: geojson.features})
+  context.stroke();
+}
+
+update(geojson);
+
+  </script>
+    
   </div>
 
 </html>
