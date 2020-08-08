@@ -7,6 +7,13 @@ function Terrain(extent){
   this.pts=[];
   this.mesh={};
 
+  this.generateGoodPointsSphere=function(){
+	this.pts=this.generatePointsSphere();
+	pts = pts.sort(function (a, b) {
+        return a[0] - b[0];
+    });
+  };
+
   this.generateGoodPoints=function() {
     this.pts = this.generatePoints();
     pts = pts.sort(function (a, b) {
@@ -92,14 +99,49 @@ function Terrain(extent){
     }
   };
 
+  this.generatePointsSphere=function(n){
+	var n=n || 256;
+    this.pts = [];
+    for (var i=0;i<n;i++){
+      var lat=Math.random()*360-180;
+      var lon=Math.random()*180-90;
+      this.pts.push([lat,lon]);
+    }
+  };
+
   this.improvePoints=function(n) {
     var n=n || 1;
-    //console.log(this.pts);
     for (var i = 0; i < n; i++) {
         this.pts = voronoi().polygons($this.pts).map(centroid);
     }
-    //console.log(this.pts);
   };
+
+  this.improvePointsSphere=function(n){
+	var n=n || 1;
+    //console.log(this.pts);
+    for (var i = 0; i < n; i++) {
+
+      console.log(d3.geoVoronoi($this.pts).polygons());
+
+      var a=d3.geoVoronoi($this.pts).polygons().features.map(centroidSphere);
+      console.log(a);
+      this.pts=a;
+    }
+  };
+
+  function centroidSphere(a) {
+	var c=d3.geoCentroid(a);      
+    return c;
+  }
+
+  function voronoiSphere() {
+    var w = $this.extent.width/2;
+    var h = $this.extent.height/2;
+    //console.log($this.pts);
+    var a=d3.geoVoronoi();
+    //console.log(a);
+    return a;
+  }
 
   function voronoi() {
     var w = $this.extent.width/2;

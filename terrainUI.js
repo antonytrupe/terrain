@@ -10,11 +10,18 @@ function TerrainUI(canvas,params)
   this.extent = this.params.extent;
   this.canvas=canvas;
   this.terrain=new Terrain(this.extent);
+
   this.generateAndVisualizePoints=function() {
     this.terrain.generatePoints();
     this.clear();
     this.visualizePoints();
   };
+
+this.generateAndVisualizePointsSphere=function(){
+	this.terrain.generatePointsSphere();
+    this.clear();
+    this.visualizePointsSphere();
+};
 
   this.improveAndVisualizeMesh=function(){
     this.terrain.improvePoints();
@@ -45,6 +52,12 @@ function TerrainUI(canvas,params)
     this.visualizePoints();
   };
 
+  this.improveAndVisualizePointsSphere=function() {
+    this.terrain.improvePointsSphere();
+    this.clear();
+    this.visualizePointsSphere();
+  };
+
   this.clear=function(){
     var ctx = this.canvas.getContext("2d");
     // Store the current transformation matrix
@@ -68,6 +81,33 @@ function TerrainUI(canvas,params)
         ctx.fill();
         ctx.closePath();
     });
+  };
+
+  this.visualizePointsSphere=function(){
+	var width = this.canvas.width, height = this.canvas.height;
+	var projection = d3.geoWinkel3()
+          .scale(width / 6.4)
+          .translate([width / 2, height / 2])
+          .precision(1);
+    //get the function that generates the d attribute from svg's line function, not directly usable for canvas
+    var ctx = this.canvas.getContext("2d");
+    var path = d3.geoPath().projection(projection).context(ctx);
+      
+    var border={'type':'Sphere'};      
+    ctx.beginPath();
+    path(border);
+    ctx.strokeStyle = "#000";
+    ctx.stroke();
+      
+    var radius=path.pointRadius(1);
+      
+      
+    var randomPoint={'type':'MultiPoint','coordinates':this.terrain.pts};
+      
+    ctx.beginPath();
+    path(randomPoint);
+    ctx.stroke();
+	
   };
 
   this.visualizeVoronoi=function () {

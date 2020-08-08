@@ -8,8 +8,9 @@
       padding:.5em;
       clear:both;
       overflow:auto;
+      display:inline-block;
       }
-      canvas{
+      canvas, svg{
       float:right;
       background-color:white;
       border: thin black solid;
@@ -28,98 +29,140 @@
     <script src="https://d3js.org/d3-array.v1.min.js"></script>
     <script src="https://d3js.org/d3-geo.v1.min.js"></script>
     <script src="https://d3js.org/d3-geo-projection.v2.min.js"></script>
+    <script src="https://unpkg.com/d3-delaunay@5"></script>
+    <script src="https://unpkg.com/d3-geo-voronoi@1.6.0/dist/d3-geo-voronoi.js"></script>
 
   </head>
-  <!--lets just get on with it-->
-  <div class="step" style="display:inline-block;">
-    <p>Generate some points on a flat, bounded plane</p>
-    <canvas id="flatpoints" width="400" height="200" style="height:200px;width:400px;"></canvas>
-    <script>
-      var flatWorld=new TerrainUI(document.getElementById('flatpoints'));
-    </script>
-    <button onclick="flatWorld.generateAndVisualizePoints()">Generate Points</button>
-    <button onclick="flatWorld.improveAndVisualizePoints()">Improve Points</button>
+  <body>
+  <p>
+  I love making maps, and filling them up with stuff, and making stuff evolve organically, but its always overwhelming past the first few things. When I found http://mewo2.com/notes/terrain/, I couldn't resist trying to take it a couple steps farther.
+  </p>
+  <p>But I sometimes can't help redesigning the wheel, and chose to use canvas instead of svg for reasons, which requirees rewiring all the d3 code that produces the images. And, I wanted to make globes, not just flat maps, which requires rewiring the algebra.</p>
+  <!--points map-->
+  <div class="a">
+    <div class="step" >
+      <p>Generate some points on a flat, bounded plane</p>
+      <canvas id="flatpoints" width="400" height="200" style="height:200px;width:400px;"></canvas>
+      <script>
+        var flatWorld=new TerrainUI(document.getElementById('flatpoints'));
+      </script>
+      <button onclick="flatWorld.generateAndVisualizePoints()">Generate Points</button>
+      <button onclick="flatWorld.improveAndVisualizePoints()">Improve Points</button>
+    </div>
   </div>
-
-  <!--basic transformations-->
-  <div class="step" style="display:inline-block;">
-    <p>Show the mesh instead of the points</p>
-    <canvas id="basic" width="400" height="200" style="height:200px;width:400px;"></canvas>
-    <script>
-      var basic=new TerrainUI(document.getElementById('basic'));
-    </script>
-    <button onclick="basic.copyAndVisualizeMesh(flatWorld)">Copy from Above</button>
-    <button onclick="basic.generateAndVisualizeMesh()">Generate Mesh</button>
-    <br />
-    <button onclick="basic.improveAndVisualizeMesh()">Improve Mesh</button>
+  <!--basic transformations with grid-->
+  <div class="a">
+    <div class="step">
+      <p>Show the mesh instead of the points</p>
+      <canvas id="basic" width="400" height="200" style="height:200px;width:400px;"></canvas>
+      <script>
+        var basic=new TerrainUI(document.getElementById('basic'));
+      </script>
+      <button onclick="basic.copyAndVisualizeMesh(flatWorld)">Copy from Above</button>
+      <button onclick="basic.generateAndVisualizeMesh()">Generate Mesh</button>
+      <br />
+      <button onclick="basic.improveAndVisualizeMesh()">Improve Mesh</button>
+    </div>
   </div>
+  <!--  globe projection using svg -->
+  <div class="a">
+    <div class="step">
+    <p>All the documentation talks about how to use d3-geo with svg, so make sure we can get that working before switching to canvas</p>
+      <svg id="svg" width="400" height="200"></svg>
+    </div>
+  </div>
+  <script>
+  
+  var svg = d3.select("#svg");
+  var width = svg.attr('width'), height = svg.attr('height');
+  
+  var projection = d3.geoWinkel3()
+      .scale(width / 6.4)
+      .translate([width / 2, height / 2])
+      .precision(1);
 
-  <!--world projections-->
-  <div class="step" style="display:inline-block;">
-    <p>Sphere Projection</p>
-    <canvas id="sphere" width="400" height="200" style="height:200px;width:400px;"></canvas>
-    <script>
-var geojson = {
-  "type": "FeatureCollection",
-  "features": [
-    {
-      "type": "Feature",
-      "properties": {
-        "name": "Africa"
-      },
-      "geometry": {
-        "type": "Polygon",
-        "coordinates": [[[-6, 36], [33, 30], [43, 11], [51, 12], [29, -33], [18, -35], [7, 5], [-17, 14], [-6, 36]]]
-      }
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "name": "Australia"
-      },
-      "geometry": {
-        "type": "Polygon",
-        "coordinates": [[[143, -11], [153, -28], [144, -38], [131, -31], [116, -35], [114, -22], [136, -12], [140, -17], [143, -11]]]
-      }
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "name": "Timbuktu"
-      },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [-3.0026, 16.7666]
-      }
-    }
-  ]
-};
+  var path = d3.geoPath()
+      .projection(projection);
 
-var context = d3.select('#sphere')
-  .node()
-  .getContext('2d');
+  var g = svg.append("g");
 
-var projection = d3.geoEquirectangular()
-  //.scale(50)
-  .translate([200, 150]);
-
-var geoGenerator = d3.geoPath()
-  .projection(projection)
-  .context(context);
-
-function update(geojson) {
-  context.lineWidth = 0.5;
-  context.strokeStyle = '#aaa';
-
-  context.beginPath();
-  geoGenerator({type: 'FeatureCollection', features: geojson.features})
-  context.stroke();
-}
-
-update(geojson);
-
-  </script>
+  var graticule = d3.geoGraticule()
+      .step([10, 10]);
+  var border={'type':'Sphere'};
+ 
+  
+  g.append("path")
+      .datum(graticule)
+      .attr("class", "graticule")
+      .attr("d", path)
+      .style("fill", "none")
+      .style("stroke", "#999");
+  
+  g.append("path")
+  .datum(border)
+  .attr("class", "border")
+  .attr("d", path)
+  .style("fill", "none")
+  .style("stroke", "#000");
     
+  </script>
+  <!--globe projection using canvas-->
+  <div class="a">
+    <div class="step" >
+      <p>Sphere Projection</p>
+      <p style="float:left;">Now we need to figure out how to do the same thing with canvas</p>
+      <canvas id="sphere" width="400" height="200" style="height:200px;width:400px;"></canvas>
+      <script>
+      //get the canvas
+      var canvas = d3.select("#sphere");
+      //get the context
+      var context = canvas.node().getContext("2d");
+      //get the size of the canvas
+      var width = canvas.attr('width'), height = canvas.attr('height');
+      //get the projection and initialize its size/scale/etc
+      var projection = d3.geoWinkel3()//.fitSize([width,height])
+          .scale(width / 6.4)
+          .translate([width / 2, height / 2])
+          .precision(1);
+      //get the function that generates the d attribute from svg's line function, not directly usable for canvas
+      var path = d3.geoPath().projection(projection).context(context);
+      //get some meridians and parallels
+      var graticule = d3.geoGraticule()
+          .step([10, 10]);
+      var border={'type':'Sphere'};
+      
+   // Graticule
+      context.beginPath();
+      path(graticule());
+      context.strokeStyle = "#999";
+      context.stroke();
+      
+      context.beginPath();
+      path(border);
+      context.strokeStyle = "#000";
+      context.stroke();
+      </script>
+    </div>
   </div>
-
+  
+  
+  <!--generate random points on a globe-->
+  <div class="a">
+    <div class="step" >
+      <p>Sphere Random Points</p>
+      <p style="float:left;"></p>
+      <canvas id="sphere_random_points" width="400" height="200" style="height:200px;width:400px;"></canvas>
+      <script>
+      //get the canvas
+      var canvas = d3.select("#sphere_random_points");
+      //get the context
+ 
+      
+      var sphere_random_points=new TerrainUI(canvas.node());
+      </script>
+      <button onclick="sphere_random_points.generateAndVisualizePointsSphere()">Generate Points</button>
+      <button onclick="sphere_random_points.improveAndVisualizePointsSphere()">Improve Points</button>
+    </div>
+  </div>
+</body>
 </html>
