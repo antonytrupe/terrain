@@ -145,7 +145,6 @@
     </div>
   </div>
   
-  
   <!--generate random points on a globe-->
   <div class="a">
     <div class="step" >
@@ -154,14 +153,63 @@
       <canvas id="sphere_random_points" width="400" height="200" style="height:200px;width:400px;"></canvas>
       <script>
       //get the canvas
-      var canvas = d3.select("#sphere_random_points");
-      //get the context
- 
-      
+      var canvas = d3.select("#sphere_random_points");      
       var sphere_random_points=new TerrainUI(canvas.node());
       </script>
       <button onclick="sphere_random_points.generateAndVisualizePointsSphere()">Generate Points</button>
       <button onclick="sphere_random_points.improveAndVisualizePointsSphere()">Improve Points</button>
+    </div>
+  </div>
+  
+  <!--show voronoi-->
+  <div class="a">
+    <div class="step" >
+      <p>Voronoi Shapes</p>
+      <p style="float:left;"></p>
+      <canvas id="sphere_voronoi" width="400" height="200" style="height:200px;width:400px;"></canvas>
+      <script>
+      //get the canvas
+      var canvas = d3.select("#sphere_voronoi");      
+      var sphere_voronoi=new TerrainUI(canvas.node());
+      </script>
+      <button onclick="sphere_voronoi.generateAndVisualizeMeshSphere()">Generate Points</button>
+      <button onclick="sphere_voronoi.improveAndVisualizeMeshSphere()">Improve Points</button>
+      <button onclick="sphere_voronoi.copyAndVisualizeMeshSphere(sphere_random_points)">Copy from Above</button>
+    </div>
+  </div>
+  
+  <!--show triangles-->
+  <div class="a">
+    <div class="step" >
+      <p>Voronoi Triangles</p>
+      <p style="float:left;"></p>
+      <canvas id="sphere_voronoi_triangles" width="400" height="200" style="height:200px;width:400px;"></canvas>
+      <script>
+      //get the canvas
+      var canvas = d3.select("#sphere_voronoi_triangles");      
+      var sphere_voronoi_triangles=new TerrainUI(canvas.node());
+      </script>
+      <button onclick="sphere_voronoi_triangles.generateAndVisualizeTrianglesSphere()">Generate Points</button>
+      <button onclick="sphere_voronoi_triangles.improveAndVisualizeTrianglesSphere()">Improve Points</button>
+      <button onclick="sphere_voronoi_triangles.copyAndVisualizeTrianglesSphere(sphere_voronoi)">Copy from Above</button>
+    </div>
+  </div>
+  
+   <!--show triangles-->
+  <div class="a">
+    <div class="step" >
+      <p>Triangles with color</p>
+      <p style="float:left;"></p>
+      <canvas id="tri_colors" width="400" height="200" style="height:200px;width:400px;"></canvas>
+      <script>
+      //get the canvas
+      var canvas = d3.select("#tri_colors");      
+      var tri_colors=new TerrainUI(canvas.node());
+      </script>
+      <button onclick="tri_colors.generateAndVisualizeTrianglesColor()">Generate Points</button>
+      <button onclick="tri_colors.improveAndVisualizeTrianglesColor()">Improve Points</button>
+      <button onclick="tri_colors.copyAndVisualizeTrianglesColor(sphere_voronoi_triangles)">Copy from Above</button>
+      
     </div>
   </div>
 </body>
