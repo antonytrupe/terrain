@@ -1,194 +1,200 @@
 "use strict";
 
 class Terrain {
-    constructor(extent) {
-        "use strict";
-        var $this = this;
-        this.extent = extent || DEFAULT_EXTENT;
-        this.points = [];
-        this.mesh = {};
-        this.cellMesh = [];
-        this.edges = [];
-        this.heightMap = [];
-        this.generateGoodPointsSphere = function() {
-            this.generatePointsSphere();
-            this.points = this.points.sort(function(a, b) {
-                return a[0] - b[0];
-            });
-            this.improvePointsSphere();
-        };
-        this.generateGoodPoints = function() {
-            this.generatePoints();
-            this.points = this.points.sort(function(a, b) {
-                return a[0] - b[0];
-            });
-            this.improvePoints();
-        };
-        function add() {
-            var n = arguments[0].length;
-            var newvals = zero(arguments[0].mesh);
-            for (var i = 0; i < n; i++) {
-                for (var j = 0; j < arguments.length; j++) {
-                    newvals[i] += arguments[j][i];
-                }
-            }
-            return newvals;
+  constructor(extent) {
+    "use strict";
+    var $this = this;
+    this.extent = extent || DEFAULT_EXTENT;
+    this.points = [];
+    this.mesh = {};
+    this.cellMesh = [];
+    this.edges = [];
+    this.heightMap = [];
+    this.generateGoodPointsSphere = function() {
+      this.generatePointsSphere();
+      this.points = this.points.sort(function(a, b) {
+        return a[0] - b[0];
+      });
+      this.improvePointsSphere();
+    };
+    this.generateGoodPoints = function() {
+      this.generatePoints();
+      this.points = this.points.sort(function(a, b) {
+        return a[0] - b[0];
+      });
+      this.improvePoints();
+    };
+
+    function add() {
+      var n = arguments[0].length;
+      var newvals = zero(arguments[0].mesh);
+      for (var i = 0; i < n; i++) {
+        for (var j = 0; j < arguments.length; j++) {
+          newvals[i] += arguments[j][i];
         }
-        function mountains(mesh, n, r) {
-            r = r || 0.05;
-            var mounts = [];
-            for (var i = 0; i < n; i++) {
-                //generate center points of mountains
-                mounts.push([mesh.extent.width * (Math.random() - 0.5), mesh.extent.height * (Math.random() - 0.5)]);
-            }
-            var newvals = zero(mesh);
-            for (var i = 0; i < mesh.vxs.length; i++) {
-                var p = mesh.vxs[i];
-                for (var j = 0; j < n; j++) {
-                    var m = mounts[j];
-                    newvals[i] += Math.pow(Math.exp(-((p[0] - m[0]) * (p[0] - m[0]) + (p[1] - m[1]) * (p[1] - m[1])) / (2 * r * r)), 2);
-                }
-            }
-            return newvals;
-        }
-        this.makeMesh = function(pts, extent) {
-            //extent = extent || defaultExtent;
-            var vor = voronoi(pts, extent);
-            var vxs = [];
-            var vxids = {};
-            var adj = [];
-            this.edges = [];
-            var tris = [];
-            for (var i = 0; i < vor.edges.length; i++) {
-                var e = vor.edges[i];
-                if (e == undefined) {
-                    continue;
-                }
-                var e0 = vxids[e[0]];
-                var e1 = vxids[e[1]];
-                if (e0 == undefined) {
-                    e0 = vxs.length;
-                    vxids[e[0]] = e0;
-                    vxs.push(e[0]);
-                }
-                if (e1 == undefined) {
-                    e1 = vxs.length;
-                    vxids[e[1]] = e1;
-                    vxs.push(e[1]);
-                }
-                adj[e0] = adj[e0] || [];
-                adj[e0].push(e1);
-                adj[e1] = adj[e1] || [];
-                adj[e1].push(e0);
-                this.edges.push([e0, e1, e.left, e.right]);
-                tris[e0] = tris[e0] || [];
-                if (!tris[e0].includes(e.left)) {
-                    tris[e0].push(e.left);
-                }
-                if (e.right && !tris[e0].includes(e.right)) {
-                    tris[e0].push(e.right);
-                }
-                tris[e1] = tris[e1] || [];
-                if (!tris[e1].includes(e.left)) {
-                    tris[e1].push(e.left);
-                }
-                if (e.right && !tris[e1].includes(e.right)) {
-                    tris[e1].push(e.right);
-                }
-            }
-            var mesh = {
-                vor: vor,
-                vxs: vxs,
-                adj: adj,
-                tris: tris,
-                extent: extent
-            };
-            mesh.map = function(f) {
-                var mapped = vxs.map(f);
-                mapped.mesh = mesh;
-                return mapped;
-            };
-            //console.log(mesh);
-            this.mesh = mesh;
-            return mesh;
-        };
-        this.zeroHeightMap = function() {
-            this.heightMap = [];
-            for (var i = 0; i < this.points.length; i++) {
-                this.heightMap[i] = 0;
-            }
-        };
-        this.copy = function(src) {
-            //make a deep copy
-            this.points = JSON.parse(JSON.stringify(src.points));
-            this.update();
-            this.zeroHeightMap();
-        };
-        this.generatePoints = function(n) {
-            var n = n || 256;
-            this.points = [];
-            for (var i = 0; i < n; i++) {
-                this.points.push([(Math.random() - .5) * this.extent.width, (Math.random() - .5) * this.extent.height]);
-            }
-        };
-        this.generatePointsSphere = function(n) {
-            var n = n || 16;
-            this.points = [];
-            for (var i = 0; i < n; i++) {
-                var lat = Math.random() * 360 - 180;
-                var lon = Math.random() * 180 - 90;
-                this.points.push([lat, lon]);
-            }
-            this.update();
-            //should zeroHeightMap be in update?
-            this.zeroHeightMap();
-        };
-        this.update = function() {
-            this.triangles = d3.geoVoronoi().triangles($this.points);
-            this.cellMesh = d3.geoVoronoi().cellMesh($this.points);
-            this.edges = d3.geoDelaunay(this.points).edges;
-        };
-        this.improvePoints = function(n) {
-            var n = n || 1;
-            for (var i = 0; i < n; i++) {
-                this.points = voronoi().polygons($this.points).map(centroid);
-            }
-        };
-        this.improvePointsSphere = function(n) {
-            var n = n || 1;
-            for (var i = 0; i < n; i++) {
-                var a = d3.geoVoronoi($this.points).polygons().features.map(centroidSphere);
-                this.points = a;
-            }
-            this.update();
-        };
-        function centroidSphere(a) {
-            var c = d3.geoCentroid(a);
-            return c;
-        }
-        function voronoiSphere() {
-            var a = d3.geoVoronoi();
-            return a;
-        }
-        function voronoi() {
-            var w = $this.extent.width / 2;
-            var h = $this.extent.height / 2;
-            var a = d3.voronoi().extent([
-                [-w, -h],
-                [w, h]
-            ])($this.points);
-            return a;
-        }
-        function centroid(pts) {
-            var x = 0;
-            var y = 0;
-            for (var i = 0; i < pts.length; i++) {
-                x += pts[i][0];
-                y += pts[i][1];
-            }
-            return [x / pts.length, y / pts.length];
-        }
+      }
+      return newvals;
     }
+
+    function mountains(mesh, n, r) {
+      r = r || 0.05;
+      var mounts = [];
+      for (var i = 0; i < n; i++) {
+        //generate center points of mountains
+        mounts.push([mesh.extent.width * (Math.random() - 0.5), mesh.extent.height * (Math.random() - 0.5)]);
+      }
+      var newvals = zero(mesh);
+      for (var i = 0; i < mesh.vxs.length; i++) {
+        var p = mesh.vxs[i];
+        for (var j = 0; j < n; j++) {
+          var m = mounts[j];
+          newvals[i] += Math.pow(Math.exp(-((p[0] - m[0]) * (p[0] - m[0]) + (p[1] - m[1]) * (p[1] - m[1])) / (2 * r * r)), 2);
+        }
+      }
+      return newvals;
+    }
+    this.makeMesh = function(pts, extent) {
+      //extent = extent || defaultExtent;
+      var vor = voronoi(pts, extent);
+      var vxs = [];
+      var vxids = {};
+      var adj = [];
+      this.edges = [];
+      var tris = [];
+      for (var i = 0; i < vor.edges.length; i++) {
+        var e = vor.edges[i];
+        if (e == undefined) {
+          continue;
+        }
+        var e0 = vxids[e[0]];
+        var e1 = vxids[e[1]];
+        if (e0 == undefined) {
+          e0 = vxs.length;
+          vxids[e[0]] = e0;
+          vxs.push(e[0]);
+        }
+        if (e1 == undefined) {
+          e1 = vxs.length;
+          vxids[e[1]] = e1;
+          vxs.push(e[1]);
+        }
+        adj[e0] = adj[e0] || [];
+        adj[e0].push(e1);
+        adj[e1] = adj[e1] || [];
+        adj[e1].push(e0);
+        this.edges.push([e0, e1, e.left, e.right]);
+        tris[e0] = tris[e0] || [];
+        if (!tris[e0].includes(e.left)) {
+          tris[e0].push(e.left);
+        }
+        if (e.right && !tris[e0].includes(e.right)) {
+          tris[e0].push(e.right);
+        }
+        tris[e1] = tris[e1] || [];
+        if (!tris[e1].includes(e.left)) {
+          tris[e1].push(e.left);
+        }
+        if (e.right && !tris[e1].includes(e.right)) {
+          tris[e1].push(e.right);
+        }
+      }
+      var mesh = {
+        vor: vor,
+        vxs: vxs,
+        adj: adj,
+        tris: tris,
+        extent: extent
+      };
+      mesh.map = function(f) {
+        var mapped = vxs.map(f);
+        mapped.mesh = mesh;
+        return mapped;
+      };
+      //console.log(mesh);
+      this.mesh = mesh;
+      return mesh;
+    };
+    this.zeroHeightMap = function() {
+      this.heightMap = [];
+      for (var i = 0; i < this.points.length; i++) {
+        this.heightMap[i] = 0;
+      }
+    };
+    this.copy = function(src) {
+      //make a deep copy
+      this.points = JSON.parse(JSON.stringify(src.points));
+      this.update();
+      this.zeroHeightMap();
+    };
+    this.generatePoints = function(n) {
+      var n = n || 256;
+      this.points = [];
+      for (var i = 0; i < n; i++) {
+        this.points.push([(Math.random() - .5) * this.extent.width, (Math.random() - .5) * this.extent.height]);
+      }
+    };
+    this.generatePointsSphere = function(n) {
+      var n = n || 16;
+      this.points = [];
+      for (var i = 0; i < n; i++) {
+        var lat = Math.random() * 360 - 180;
+        var lon = Math.random() * 180 - 90;
+        this.points.push([lat, lon]);
+      }
+      this.update();
+      //should zeroHeightMap be in update?
+      this.zeroHeightMap();
+    };
+    this.update = function() {
+      this.triangles = d3.geoVoronoi().triangles($this.points);
+      this.cellMesh = d3.geoVoronoi().cellMesh($this.points);
+      this.edges = d3.geoDelaunay(this.points).edges;
+    };
+    this.improvePoints = function(n) {
+      var n = n || 1;
+      for (var i = 0; i < n; i++) {
+        this.points = voronoi().polygons($this.points).map(centroid);
+      }
+    };
+    this.improvePointsSphere = function(n) {
+      var n = n || 1;
+      for (var i = 0; i < n; i++) {
+        var a = d3.geoVoronoi($this.points).polygons().features.map(centroidSphere);
+        this.points = a;
+      }
+      this.update();
+    };
+
+    function centroidSphere(a) {
+      var c = d3.geoCentroid(a);
+      return c;
+    }
+
+    function voronoiSphere() {
+      var a = d3.geoVoronoi();
+      return a;
+    }
+
+    function voronoi() {
+      var w = $this.extent.width / 2;
+      var h = $this.extent.height / 2;
+      var a = d3.voronoi().extent([
+        [-w, -h],
+        [w, h]
+      ])($this.points);
+      return a;
+    }
+
+    function centroid(pts) {
+      var x = 0;
+      var y = 0;
+      for (var i = 0; i < pts.length; i++) {
+        x += pts[i][0];
+        y += pts[i][1];
+      }
+      return [x / pts.length, y / pts.length];
+    }
+  }
 }
 
 function runif(lo, hi) {
@@ -289,7 +295,6 @@ function normalize(h) {
 function peaky(h) {
   return map(normalize(h), Math.sqrt);
 }
-
 
 
 
