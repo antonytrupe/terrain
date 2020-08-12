@@ -127,16 +127,16 @@
       //get the function that generates the d attribute from svg's line function, not directly usable for canvas
       var path = d3.geoPath().projection(projection).context(context);
       //get some meridians and parallels
+      // Graticule
       var graticule = d3.geoGraticule()
-          .step([10, 10]);
-      var border={'type':'Sphere'};
-      
-   // Graticule
+           .step([10, 10]);
+
       context.beginPath();
       path(graticule());
       context.strokeStyle = "#999";
       context.stroke();
       
+      var border={'type':'Sphere'};
       context.beginPath();
       path(border);
       context.strokeStyle = "#000";
@@ -223,7 +223,9 @@
       <button onclick="blob.copyAndVisualizeTrianglesColor(tri_colors)">Copy from Above</button>
       <button onclick="blob.generateAndVisualizeTrianglesColor()">Generate Points</button>
       <button onclick="blob.improveAndVisualizeTrianglesColor()">Improve Points</button>
-      <button onclick="blob.addMountainAndVisualizeTrianglesColor()">Add Mountain</button>
+      <button onclick="blob.addMountainAndVisualizeTrianglesColor()">Add five blobs</button>
+      <button onclick="blob.setSeaLevelToMedianAndVisualize()">Set sea level to median</button>
+      
     </div>
   </div>
 </body>

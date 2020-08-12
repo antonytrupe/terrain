@@ -10,6 +10,104 @@ class Terrain {
     this.cellMesh = [];
     this.edges = [];
     this.heightMap = [];
+
+    function setSeaLevel(q) {
+      var newh = []
+      newh.length = $this.heightMap.length;
+      newh.fill(0);
+      var delta = quantile($this.heightMap, q);
+      //console.log(delta);
+      for (var i = 0; i < $this.heightMap.length; i++) {
+        $this.heightMap[i] -= delta;
+      }
+      //return newh;
+      //console.log($this.heightMap)
+    }
+
+    function mergeSegments(segs) {
+      var adj = {};
+      for (var i = 0; i < segs.length; i++) {
+        var seg = segs[i];
+        var a0 = adj[seg[0]] || [];
+        var a1 = adj[seg[1]] || [];
+        a0.push(seg[1]);
+        a1.push(seg[0]);
+        adj[seg[0]] = a0;
+        adj[seg[1]] = a1;
+      }
+      var done = [];
+      var paths = [];
+      var path = null;
+      while (true) {
+        if (path == null) {
+          for (var i = 0; i < segs.length; i++) {
+            if (done[i]) continue;
+            done[i] = true;
+            path = [segs[i][0], segs[i][1]];
+            break;
+          }
+          if (path == null) break;
+        }
+        var changed = false;
+        for (var i = 0; i < segs.length; i++) {
+          if (done[i]) continue;
+          if (adj[path[0]].length == 2 && segs[i][0] == path[0]) {
+            path.unshift(segs[i][1]);
+          } else if (adj[path[0]].length == 2 && segs[i][1] == path[0]) {
+            path.unshift(segs[i][0]);
+          } else if (adj[path[path.length - 1]].length == 2 && segs[i][0] == path[path.length - 1]) {
+            path.push(segs[i][1]);
+          } else if (adj[path[path.length - 1]].length == 2 && segs[i][1] == path[path.length - 1]) {
+            path.push(segs[i][0]);
+          } else {
+            continue;
+          }
+          done[i] = true;
+          changed = true;
+          break;
+        }
+        if (!changed) {
+          paths.push(path);
+          path = null;
+        }
+      }
+      return paths;
+    }
+
+    this.getCoastPath = function() {
+      setSeaLevel(.5);
+      var coast = this.getContour()
+      return coast;
+    };
+
+    this.getContour = function(level) {
+      //.log('getContour');
+      level = level || 0;
+      var h = this.heightMap;
+      var edges = [];
+      for (var i = 0; i < this.edges.length; i++) {
+        //var e = h.mesh.edges[i];
+        var e = this.edges[i];
+        //if (e[3] == undefined) continue;
+        //if (isnearedge(h.mesh, e[0]) || isnearedge(h.mesh, e[1])) continue;
+        if ((h[e[0]] > level && h[e[1]] <= level) || (h[e[1]] > level && h[e[0]] <= level)) {
+          //console.log('coast edge');
+          edges.push([this.points[e[0]], this.points[e[1]]]);
+        }
+      }
+      //console.log(edges);
+      return mergeSegments(edges);
+    };
+
+    function quantile(h, q) {
+      var sortedh = [];
+      for (var i = 0; i < h.length; i++) {
+        sortedh[i] = h[i];
+      }
+      sortedh.sort(d3.ascending);
+      return d3.quantile(sortedh, q);
+    }
+
     this.generateGoodPointsSphere = function() {
       this.generatePointsSphere();
       this.points = this.points.sort(function(a, b) {
@@ -17,6 +115,7 @@ class Terrain {
       });
       this.improvePointsSphere();
     };
+
     this.generateGoodPoints = function() {
       this.generatePoints();
       this.points = this.points.sort(function(a, b) {
@@ -25,34 +124,45 @@ class Terrain {
       this.improvePoints();
     };
 
-    function add() {
-      var n = arguments[0].length;
-      var newvals = zero(arguments[0].mesh);
-      for (var i = 0; i < n; i++) {
-        for (var j = 0; j < arguments.length; j++) {
-          newvals[i] += arguments[j][i];
-        }
+    this.add = function(a) {
+      var newvals = []
+      newvals.length = this.heightMap.length;
+      newvals.fill(0);
+      for (var i = 0; i < a.length; i++) {
+        this.heightMap[i] += a[i];
       }
-      return newvals;
-    }
+    };
 
-    function mountains(mesh, n, r) {
-      r = r || 0.05;
+    this.mountains = function(n, r) {
+      r = r || 0.5;
       var mounts = [];
       for (var i = 0; i < n; i++) {
         //generate center points of mountains
-        mounts.push([mesh.extent.width * (Math.random() - 0.5), mesh.extent.height * (Math.random() - 0.5)]);
+        mounts.push(randomPoint());
       }
-      var newvals = zero(mesh);
-      for (var i = 0; i < mesh.vxs.length; i++) {
-        var p = mesh.vxs[i];
+      //make a zerod copy of the heightmap
+      var newvals = []
+      newvals.length = this.heightMap.length;
+      newvals.fill(0);
+      for (var i = 0; i < this.points.length; i++) {
+        var p = this.points[i];
         for (var j = 0; j < n; j++) {
           var m = mounts[j];
-          newvals[i] += Math.pow(Math.exp(-((p[0] - m[0]) * (p[0] - m[0]) + (p[1] - m[1]) * (p[1] - m[1])) / (2 * r * r)), 2);
+          var pp = [(p[0] + 90) / 180, (p[1] + 180) / 360];
+          var mm = [(m[0] + 90) / 180, (m[1] + 180) / 360];
+          //need to normalize points from [-90|90,-180|180] to [0|1,0|1]
+          //y=(cos(pi*x)+1)/2
+          //distance in radians
+          var dr = d3.geoDistance(p, m);
+          if (dr < r) {
+            newvals[i] += (Math.cos(Math.PI * dr) + 1) / 2;
+          }
         }
       }
-      return newvals;
-    }
+      //console.log(newvals);
+      this.add(newvals);
+    };
+
     this.makeMesh = function(pts, extent) {
       //extent = extent || defaultExtent;
       var vor = voronoi(pts, extent);
@@ -116,16 +226,17 @@ class Terrain {
     };
     this.zeroHeightMap = function() {
       this.heightMap = [];
-      for (var i = 0; i < this.points.length; i++) {
-        this.heightMap[i] = 0;
-      }
+      this.heightMap.length = this.points.length;
+      this.heightMap.fill(0);
     };
+
     this.copy = function(src) {
       //make a deep copy
       this.points = JSON.parse(JSON.stringify(src.points));
       this.update();
       this.zeroHeightMap();
     };
+
     this.generatePoints = function(n) {
       var n = n || 256;
       this.points = [];
@@ -133,18 +244,24 @@ class Terrain {
         this.points.push([(Math.random() - .5) * this.extent.width, (Math.random() - .5) * this.extent.height]);
       }
     };
+
+    function randomPoint() {
+      var lat = Math.acos(Math.random() * 2 - 1) / Math.PI * 180 - 90;
+      var lon = Math.random() * 360 - 180;
+      return [lon, lat];
+    }
+
     this.generatePointsSphere = function(n) {
-      var n = n || 16;
+      var n = n || 1024;
       this.points = [];
       for (var i = 0; i < n; i++) {
-        var lat = Math.random() * 360 - 180;
-        var lon = Math.random() * 180 - 90;
-        this.points.push([lat, lon]);
+        this.points.push(randomPoint());
       }
       this.update();
       //should zeroHeightMap be in update?
       this.zeroHeightMap();
     };
+
     this.update = function() {
       this.triangles = d3.geoVoronoi().triangles($this.points);
       this.cellMesh = d3.geoVoronoi().cellMesh($this.points);
@@ -454,14 +571,7 @@ function doErosion(h, amount, n) {
   return h;
 }
 
-function setSeaLevel(h, q) {
-  var newh = zero(h.mesh);
-  var delta = quantile(h, q);
-  for (var i = 0; i < h.length; i++) {
-    newh[i] = h[i] - delta;
-  }
-  return newh;
-}
+
 
 function cleanCoast(h, iters) {
   for (var iter = 0; iter < iters; iter++) {
@@ -560,20 +670,6 @@ function placeCities(render) {
   }
 }
 
-function contour(h, level) {
-  level = level || 0;
-  var edges = [];
-  for (var i = 0; i < h.mesh.edges.length; i++) {
-    var e = h.mesh.edges[i];
-    if (e[3] == undefined) continue;
-    if (isnearedge(h.mesh, e[0]) || isnearedge(h.mesh, e[1])) continue;
-    if ((h[e[0]] > level && h[e[1]] <= level) ||
-      (h[e[1]] > level && h[e[0]] <= level)) {
-      edges.push([e[2], e[3]]);
-    }
-  }
-  return mergeSegments(edges);
-}
 
 function getRivers(h, limit) {
   var dh = downhill(h);
@@ -669,55 +765,7 @@ function getBorders(render) {
   return mergeSegments(edges).map(relaxPath);
 }
 
-function mergeSegments(segs) {
-  var adj = {};
-  for (var i = 0; i < segs.length; i++) {
-    var seg = segs[i];
-    var a0 = adj[seg[0]] || [];
-    var a1 = adj[seg[1]] || [];
-    a0.push(seg[1]);
-    a1.push(seg[0]);
-    adj[seg[0]] = a0;
-    adj[seg[1]] = a1;
-  }
-  var done = [];
-  var paths = [];
-  var path = null;
-  while (true) {
-    if (path == null) {
-      for (var i = 0; i < segs.length; i++) {
-        if (done[i]) continue;
-        done[i] = true;
-        path = [segs[i][0], segs[i][1]];
-        break;
-      }
-      if (path == null) break;
-    }
-    var changed = false;
-    for (var i = 0; i < segs.length; i++) {
-      if (done[i]) continue;
-      if (adj[path[0]].length == 2 && segs[i][0] == path[0]) {
-        path.unshift(segs[i][1]);
-      } else if (adj[path[0]].length == 2 && segs[i][1] == path[0]) {
-        path.unshift(segs[i][0]);
-      } else if (adj[path[path.length - 1]].length == 2 && segs[i][0] == path[path.length - 1]) {
-        path.push(segs[i][1]);
-      } else if (adj[path[path.length - 1]].length == 2 && segs[i][1] == path[path.length - 1]) {
-        path.push(segs[i][0]);
-      } else {
-        continue;
-      }
-      done[i] = true;
-      changed = true;
-      break;
-    }
-    if (!changed) {
-      paths.push(path);
-      path = null;
-    }
-  }
-  return paths;
-}
+
 
 function relaxPath(path) {
   var newpath = [path[0]];
@@ -732,15 +780,6 @@ function relaxPath(path) {
 }
 
 
-function makeD3Path(path) {
-  var p = d3.path();
-  p.moveTo(1000 * path[0][0], 1000 * path[0][1]);
-  for (var i = 1; i < path.length; i++) {
-    p.lineTo(1000 * path[i][0], 1000 * path[i][1]);
-  }
-  return p.toString();
-}
-
 
 
 function visualizeDownhill(h) {
@@ -748,16 +787,7 @@ function visualizeDownhill(h) {
   drawPaths('river', links);
 }
 
-function drawPaths(svg, cls, paths) {
-  var paths = svg.selectAll('path.' + cls).data(paths)
-  paths.enter()
-    .append('path')
-    .classed(cls, true)
-  paths.exit()
-    .remove();
-  svg.selectAll('path.' + cls)
-    .attr('d', makeD3Path);
-}
+
 
 function visualizeSlopes(svg, render) {
   var h = render.h;

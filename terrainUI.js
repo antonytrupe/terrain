@@ -23,6 +23,44 @@ class TerrainUI {
       this.clear();
       this.visualizePoints();
     };
+
+    this.setSeaLevelToMedianAndVisualize=function(){
+	  this.clear();
+      //this.terrain.setSeaLevel(.5);
+      this.visualizeTrianglesColor();
+      visualizeSeaLevel();
+    };
+
+    function visualizeSeaLevel(){
+	  var width = $this.canvas.width,
+        height = $this.canvas.height;
+      var projection = d3.geoWinkel3()
+        .scale(width / 6.4)
+        .translate([width / 2, height / 2])
+        .rotate([0,-30,-30])
+        .precision(1);
+      //get the function that generates the d attribute from svg's line function, not directly usable for canvas
+      var ctx = $this.canvas.getContext("2d");
+      var path = d3.geoPath().projection(projection).context(ctx);
+      ctx.beginPath();
+      var coast=$this.terrain.getCoastPath();
+      //console.log(coast);
+      //console.log(makeD3Path(coast));
+      for (var i = 0; i < coast.length; i++) {
+	    for (var j = 1; j < coast[i].length;j++) {
+          ctx.beginPath();
+          var a = {
+            'type': 'LineString',
+            'coordinates': [coast[i][j-1], coast[i][j]]
+          };
+          //console.log(a);
+          ctx.strokeStyle = "#0F0";
+          path(a);
+          ctx.stroke();
+        }
+      }
+    }
+
     this.generateAndVisualizePointsSphere = function() {
       this.terrain.generatePointsSphere();
       this.clear();
@@ -170,20 +208,25 @@ class TerrainUI {
       ctx.strokeStyle = "#000";
       ctx.stroke();
       ctx.beginPath();
+      //console.log(this.terrain.triangles);
       path(this.terrain.triangles);
       ctx.stroke();
     };
+
     this.addMountainAndVisualizeTrianglesColor = function() {
       //TODO add mountain
+      this.terrain.mountains(5);
       this.clear();
       this.visualizeTrianglesColor();
     };
+
     this.visualizeTrianglesColor = function() {
       var width = this.canvas.width,
         height = this.canvas.height;
       var projection = d3.geoWinkel3()
         .scale(width / 6.4)
         .translate([width / 2, height / 2])
+        .rotate([0,-30,-30])
         .precision(1);
       //get the function that generates the d attribute from svg's line function, not directly usable for canvas
       var ctx = this.canvas.getContext("2d");
@@ -195,8 +238,15 @@ class TerrainUI {
       path(border);
       ctx.strokeStyle = "#000";
       ctx.stroke();
-      //console.log(this.terrain.triangles);
-      //console.log(this.terrain.heightMap);
+
+      var graticule = d3.geoGraticule()
+           .step([30, 30]);
+
+      ctx.beginPath();
+      path(graticule());
+      ctx.strokeStyle = "#000";
+      ctx.stroke();
+
       var hi = d3.max(this.terrain.heightMap) + 1e-9;
       var lo = d3.min(this.terrain.heightMap) - 1e-9;
       //convert all the values to 0-1 so that we can interpolate them later
@@ -210,10 +260,9 @@ class TerrainUI {
         var startPixel = projection(start);
         var stopPixel = projection(stop);
         var startHeight = mappedvals[edge[0]];
-        //console.log(startHeight);
         var stopHeight = mappedvals[edge[1]];
-        var startColor = d3.interpolateCool(startHeight);
-        var stopColor = d3.interpolateCool(stopHeight);
+        var startColor = d3.interpolateViridis(startHeight);
+        var stopColor = d3.interpolateViridis(stopHeight);
         var grad = ctx.createLinearGradient(startPixel[0], startPixel[1], stopPixel[0], stopPixel[1]);
         grad.addColorStop(0, startColor);
         grad.addColorStop(1, stopColor);
