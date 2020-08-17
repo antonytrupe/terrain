@@ -10,8 +10,67 @@ class Terrain {
     this.cellMesh = [];
     this.edges = [];
     this.heightMap = [];
+    this.neighbors = [];
 
-    function setSeaLevel(q) {
+    function neighbours(i) {
+      var onbs = $this.neighbors[i];
+      var nbs = [];
+      for (var i = 0; i < onbs.length; i++) {
+        nbs.push(onbs[i]);
+      }
+      return nbs;
+    }
+
+    this.cleanCoast = function(iters) {
+      var h = this.heightMap
+      iters = iters || 1;
+      for (var iter = 0; iter < iters; iter++) {
+        var newh = []
+        newh.length = this.heightMap.length;
+        newh.fill(0);
+
+        for (var i = 0; i < h.length; i++) {
+          newh[i] = h[i];
+          var nbs = neighbours(i);
+          if (h[i] <= 0 || nbs.length != 3) continue;
+          var count = 0;
+          var best = -999999;
+          for (var j = 0; j < nbs.length; j++) {
+            if (h[nbs[j]] > 0) {
+              count++;
+            } else if (h[nbs[j]] > best) {
+              best = h[nbs[j]];
+            }
+          }
+          if (count > 1) continue;
+          newh[i] = best / 2;
+        }
+        h = JSON.parse(JSON.stringify(newh));
+        newh.length = this.heightMap.length;
+        newh.fill(0);
+        for (var i = 0; i < h.length; i++) {
+          newh[i] = h[i];
+          var nbs = neighbours(i);
+          if (h[i] > 0 || nbs.length != 3) {continue;}
+          var count = 0;
+          var best = 999999;
+          for (var j = 0; j < nbs.length; j++) {
+            if (h[nbs[j]] <= 0) {
+              count++;
+            } else if (h[nbs[j]] < best) {
+              best = h[nbs[j]];
+            }
+          }
+          if (count > 1) {continue;}
+          newh[i] = best / 2;
+        }
+        h = newh;
+      }
+      this.heightMap = h
+      return h;
+    }
+
+    this.setSeaLevel = function(q) {
       var newh = []
       newh.length = $this.heightMap.length;
       newh.fill(0);
@@ -22,7 +81,7 @@ class Terrain {
       }
       //return newh;
       //console.log($this.heightMap)
-    }
+    };
 
     function mergeSegments(segs) {
       var adj = {};
@@ -75,7 +134,7 @@ class Terrain {
     }
 
     this.getCoastPath = function() {
-      setSeaLevel(.5);
+      this.setSeaLevel(.5);
       var coast = this.getContour()
       return coast;
     };
@@ -262,11 +321,65 @@ class Terrain {
       this.zeroHeightMap();
     };
 
+    function generateNeighbors() {
+      var vxs = [];
+      var vxids = {};
+      var adj = [];
+      var edges = [];
+      var tris = [];
+      for (var i = 0; i < $this.voronoiEdges.length; i++) {
+        var e = $this.voronoiEdges[i];
+        if (e == undefined) {
+          continue;
+        }
+        var e0 = vxids[e[0]];
+        var e1 = vxids[e[1]];
+        if (e0 == undefined) {
+          e0 = vxs.length;
+          vxids[e[0]] = e0;
+          vxs.push(e[0]);
+        }
+        if (e1 == undefined) {
+          e1 = vxs.length;
+          vxids[e[1]] = e1;
+          vxs.push(e[1]);
+        }
+        adj[e0] = adj[e0] || [];
+        adj[e0].push(e1);
+        adj[e1] = adj[e1] || [];
+        adj[e1].push(e0);
+        edges.push([e0, e1, e.left, e.right]);
+        tris[e0] = tris[e0] || [];
+        if (!tris[e0].includes(e.left)) {
+          tris[e0].push(e.left);
+        }
+        if (e.right && !tris[e0].includes(e.right)) {
+          tris[e0].push(e.right);
+        }
+        tris[e1] = tris[e1] || [];
+        if (!tris[e1].includes(e.left)) {
+          tris[e1].push(e.left);
+        }
+        if (e.right && !tris[e1].includes(e.right)) {
+          tris[e1].push(e.right);
+        }
+      }
+      console.log(adj);
+      //console.log(edges);
+      //console.log($this.edges);
+      $this.neighbors = adj;
+    }
+
     this.update = function() {
-      this.triangles = d3.geoVoronoi().triangles($this.points);
-      this.cellMesh = d3.geoVoronoi().cellMesh($this.points);
+      this.triangles = d3.geoVoronoi().triangles(this.points);
+      this.cellMesh = d3.geoVoronoi().cellMesh(this.points);
       this.edges = d3.geoDelaunay(this.points).edges;
+
+      this.voronoiEdges = d3.geoDelaunay(this.points).mesh;
+      generateNeighbors();
+      console.log(this);
     };
+
     this.improvePoints = function(n) {
       var n = n || 1;
       for (var i = 0; i < n; i++) {
@@ -359,14 +472,7 @@ function isnearedge(mesh, i) {
   return x < -0.45 * w || x > 0.45 * w || y < -0.45 * h || y > 0.45 * h;
 }
 
-function neighbours(mesh, i) {
-  var onbs = mesh.adj[i];
-  var nbs = [];
-  for (var i = 0; i < onbs.length; i++) {
-    nbs.push(onbs[i]);
-  }
-  return nbs;
-}
+
 
 function distance(mesh, i, j) {
   var p = mesh.vxs[i];
@@ -567,53 +673,6 @@ function doErosion(h, amount, n) {
   for (var i = 0; i < n; i++) {
     h = erode(h, amount);
     h = fillSinks(h);
-  }
-  return h;
-}
-
-
-
-function cleanCoast(h, iters) {
-  for (var iter = 0; iter < iters; iter++) {
-    var changed = 0;
-    var newh = zero(h.mesh);
-    for (var i = 0; i < h.length; i++) {
-      newh[i] = h[i];
-      var nbs = neighbours(h.mesh, i);
-      if (h[i] <= 0 || nbs.length != 3) continue;
-      var count = 0;
-      var best = -999999;
-      for (var j = 0; j < nbs.length; j++) {
-        if (h[nbs[j]] > 0) {
-          count++;
-        } else if (h[nbs[j]] > best) {
-          best = h[nbs[j]];
-        }
-      }
-      if (count > 1) continue;
-      newh[i] = best / 2;
-      changed++;
-    }
-    h = newh;
-    newh = zero(h.mesh);
-    for (var i = 0; i < h.length; i++) {
-      newh[i] = h[i];
-      var nbs = neighbours(h.mesh, i);
-      if (h[i] > 0 || nbs.length != 3) continue;
-      var count = 0;
-      var best = 999999;
-      for (var j = 0; j < nbs.length; j++) {
-        if (h[nbs[j]] <= 0) {
-          count++;
-        } else if (h[nbs[j]] < best) {
-          best = h[nbs[j]];
-        }
-      }
-      if (count > 1) continue;
-      newh[i] = best / 2;
-      changed++;
-    }
-    h = newh;
   }
   return h;
 }

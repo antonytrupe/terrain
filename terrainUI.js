@@ -18,6 +18,14 @@ class TerrainUI {
     this.extent = this.params.extent;
     this.canvas = canvas;
     this.terrain = new Terrain(this.extent);
+
+    this.cleanCoast=function(){
+      this.terrain.cleanCoast();
+	  this.clear();
+	  //this.visualizeTrianglesColor();
+      visualizeSeaLevel();
+    };
+
     this.generateAndVisualizePoints = function() {
       this.terrain.generatePoints();
       this.clear();
@@ -26,19 +34,15 @@ class TerrainUI {
 
     this.setSeaLevelToMedianAndVisualize=function(){
 	  this.clear();
-      //this.terrain.setSeaLevel(.5);
-      this.visualizeTrianglesColor();
+      this.terrain.setSeaLevel(.5);
+      //this.visualizeTrianglesColor();
       visualizeSeaLevel();
     };
 
     function visualizeSeaLevel(){
 	  var width = $this.canvas.width,
         height = $this.canvas.height;
-      var projection = d3.geoWinkel3()
-        .scale(width / 6.4)
-        .translate([width / 2, height / 2])
-        .rotate([0,-30,-30])
-        .precision(1);
+      var projection = getProjection();
       //get the function that generates the d attribute from svg's line function, not directly usable for canvas
       var ctx = $this.canvas.getContext("2d");
       var path = d3.geoPath().projection(projection).context(ctx);
@@ -54,7 +58,9 @@ class TerrainUI {
             'coordinates': [coast[i][j-1], coast[i][j]]
           };
           //console.log(a);
-          ctx.strokeStyle = "#0F0";
+          ctx.strokeStyle = "#000";
+          ctx.lineWidth = 2;
+
           path(a);
           ctx.stroke();
         }
@@ -166,22 +172,11 @@ class TerrainUI {
       });
     };
     this.visualizePointsSphere = function() {
-      var width = this.canvas.width,
-        height = this.canvas.height;
-      var projection = d3.geoWinkel3()
-        .scale(width / 6.4)
-        .translate([width / 2, height / 2])
-        .precision(1);
+      var projection =getProjection();
       //get the function that generates the d attribute from svg's line function, not directly usable for canvas
       var ctx = this.canvas.getContext("2d");
       var path = d3.geoPath().projection(projection).context(ctx);
-      var border = {
-        'type': 'Sphere'
-      };
-      ctx.beginPath();
-      path(border);
-      ctx.strokeStyle = "#000";
-      ctx.stroke();
+      visualizeBorder();
       var randomPoint = {
         'type': 'MultiPoint',
         'coordinates': this.terrain.points
@@ -190,27 +185,22 @@ class TerrainUI {
       path(randomPoint);
       ctx.stroke();
     };
+
     this.visualizeTrianglesSphere = function() {
-      var width = this.canvas.width,
-        height = this.canvas.height;
-      var projection = d3.geoWinkel3()
-        .scale(width / 6.4)
-        .translate([width / 2, height / 2])
-        .precision(1);
+      var projection = getProjection();
       //get the function that generates the d attribute from svg's line function, not directly usable for canvas
       var ctx = this.canvas.getContext("2d");
       var path = d3.geoPath().projection(projection).context(ctx);
-      var border = {
-        'type': 'Sphere'
-      };
-      ctx.beginPath();
-      path(border);
-      ctx.strokeStyle = "#000";
-      ctx.stroke();
+      visualizeBorder();
       ctx.beginPath();
       //console.log(this.terrain.triangles);
       path(this.terrain.triangles);
       ctx.stroke();
+    };
+
+    this.visualizeLand=function(){
+	  this.clear();
+      visualizeSeaLevel();
     };
 
     this.addMountainAndVisualizeTrianglesColor = function() {
@@ -218,18 +208,22 @@ class TerrainUI {
       this.terrain.mountains(5);
       this.clear();
       this.visualizeTrianglesColor();
+      visualizeSeaLevel();
     };
 
-    this.visualizeTrianglesColor = function() {
-      var width = this.canvas.width,
-        height = this.canvas.height;
-      var projection = d3.geoWinkel3()
+    function getProjection(){
+      var width = $this.canvas.width,
+        height = $this.canvas.height;
+      return  d3.geoWinkel3()
         .scale(width / 6.4)
         .translate([width / 2, height / 2])
         .rotate([0,-30,-30])
         .precision(1);
-      //get the function that generates the d attribute from svg's line function, not directly usable for canvas
-      var ctx = this.canvas.getContext("2d");
+    }
+
+    function visualizeBorder(){
+      var projection = getProjection();
+	  var ctx = $this.canvas.getContext("2d");
       var path = d3.geoPath().projection(projection).context(ctx);
       var border = {
         'type': 'Sphere'
@@ -238,14 +232,27 @@ class TerrainUI {
       path(border);
       ctx.strokeStyle = "#000";
       ctx.stroke();
+    }
 
-      var graticule = d3.geoGraticule()
+    function visualizeGraticuls(){
+      var projection = getProjection();
+      var ctx = this.canvas.getContext("2d");
+      var path = d3.geoPath().projection(projection).context(ctx);
+       var graticule = d3.geoGraticule()
            .step([30, 30]);
-
       ctx.beginPath();
       path(graticule());
       ctx.strokeStyle = "#000";
       ctx.stroke();
+    }
+
+    this.visualizeTrianglesColor = function() {
+     
+      var projection = getProjection();
+      //get the function that generates the d attribute from svg's line function, not directly usable for canvas
+      var ctx = this.canvas.getContext("2d");
+      var path = d3.geoPath().projection(projection).context(ctx);
+      visualizeBorder()
 
       var hi = d3.max(this.terrain.heightMap) + 1e-9;
       var lo = d3.min(this.terrain.heightMap) - 1e-9;
@@ -277,23 +284,13 @@ class TerrainUI {
         ctx.stroke();
       }
     };
+
     this.visualizeMeshSphere = function() {
-      var width = this.canvas.width,
-        height = this.canvas.height;
-      var projection = d3.geoWinkel3()
-        .scale(width / 6.4)
-        .translate([width / 2, height / 2])
-        .precision(1);
+      var projection = getProjection()
       //get the function that generates the d attribute from svg's line function, not directly usable for canvas
       var ctx = this.canvas.getContext("2d");
       var path = d3.geoPath().projection(projection).context(ctx);
-      var border = {
-        'type': 'Sphere'
-      };
-      ctx.beginPath();
-      path(border);
-      ctx.strokeStyle = "#000";
-      ctx.stroke();
+      visualizeBorder();
       ctx.beginPath();
       //console.log(this.terrain.cellMesh);
       path(this.terrain.cellMesh);

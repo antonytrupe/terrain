@@ -210,21 +210,23 @@
     </div>
   </div>
   
-  <!--add a random blob-->
+  <!--transformations, coast-->
   <div class="a">
     <div class="step" >
-      <p>Blob Transformation</p>
+      <p>Transformations, Coast</p>
       <p style="float:left;"></p>
-      <canvas id="blob" width="400" height="200" style="height:200px;width:400px;"></canvas>
+      <canvas id="transformations_coast" width="400" height="200" style="height:200px;width:400px;"></canvas>
       <script>
       //get the canvas
-      var blob=new TerrainUI(document.getElementById('blob'));
+      var transformations_coast=new TerrainUI(document.getElementById('transformations_coast'));
       </script>
-      <button onclick="blob.copyAndVisualizeTrianglesColor(tri_colors)">Copy from Above</button>
-      <button onclick="blob.generateAndVisualizeTrianglesColor()">Generate Points</button>
-      <button onclick="blob.improveAndVisualizeTrianglesColor()">Improve Points</button>
-      <button onclick="blob.addMountainAndVisualizeTrianglesColor()">Add five blobs</button>
-      <button onclick="blob.setSeaLevelToMedianAndVisualize()">Set sea level to median</button>
+      <button onclick="transformations_coast.copyAndVisualizeTrianglesColor(tri_colors)">Copy from Above</button>
+      <button onclick="transformations_coast.generateAndVisualizeTrianglesColor()">Generate Good Points</button>
+      <button onclick="transformations_coast.improveAndVisualizeTrianglesColor()">Improve Points</button>
+      <button onclick="transformations_coast.addMountainAndVisualizeTrianglesColor()">Add five blobs</button>
+      <button onclick="transformations_coast.setSeaLevelToMedianAndVisualize()">Set sea level to median</button>
+      <button onclick="transformations_coast.cleanCoast()">Clean coast</button>
+      <button onclick="transformations_coast.visualizeLand()">Draw Land</button>
       
     </div>
   </div>
