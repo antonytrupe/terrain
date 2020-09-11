@@ -1,21 +1,10 @@
 "use strict";
-const DEFAULT_EXTENT = {
-  'width': 1,
-  'height': 1
-};
-const DEFAULT_PARAMS = {
-  'extent': DEFAULT_EXTENT,
-  'canvasWidth': 400,
-  'canvasHeight': 200
-};
-
-
 class TerrainUI {
-  constructor(canvas, params) {
+  constructor(canvas) {
     "use strict";
     var $this = this;
-    this.params = params || DEFAULT_PARAMS;
-    this.extent = this.params.extent;
+    //this.params = params || DEFAULT_PARAMS;
+    //this.extent = this.params.extent;
     this.canvas = canvas;
     this.terrain = new Terrain(this.extent);
 
@@ -26,22 +15,20 @@ class TerrainUI {
       visualizeSeaLevel();
     };
 
-    this.generateAndVisualizePoints = function() {
-      this.terrain.generatePoints();
+    this.generateAndVisualizePointsFlat = function() {
+      this.terrain.generatePointsFlat();
       this.clear();
-      this.visualizePoints();
+      this.visualizePointsFlat();
     };
 
     this.setSeaLevelToMedianAndVisualize=function(){
 	  this.clear();
       this.terrain.setSeaLevel(.5);
-      //this.visualizeTrianglesColor();
+      this.visualizeTrianglesColor();
       visualizeSeaLevel();
     };
 
     function visualizeSeaLevel(){
-	  var width = $this.canvas.width,
-        height = $this.canvas.height;
       var projection = getProjection();
       //get the function that generates the d attribute from svg's line function, not directly usable for canvas
       var ctx = $this.canvas.getContext("2d");
@@ -67,116 +54,147 @@ class TerrainUI {
       }
     }
 
-    this.generateAndVisualizePointsSphere = function() {
-      this.terrain.generatePointsSphere();
-      this.clear();
-      this.visualizePointsSphere();
+    this.generateAndVisualizePoints = function() {
+      this.terrain.generatePoints();
+      clear();
+      this.visualizeOriginalPoints();
     };
     this.improveAndVisualizeMesh = function() {
-      this.terrain.improvePoints();
+      this.terrain.improvePointsFlat();
       this.terrain.makeMesh();
-      this.clear();
+      clear();
       this.visualizeVoronoi();
     };
-    this.improveAndVisualizeMeshSphere = function() {
-      this.terrain.improvePointsSphere();
-      //this.terrain.makeMesh();
-      this.clear();
-      this.visualizeMeshSphere();
+    this.improveAndVisualizeVoronoi = function() {
+      this.terrain.improvePoints();
+      clear();
+      this.visualizeMesh();
     };
     this.improveAndVisualizeTrianglesColor = function() {
-      this.terrain.improvePointsSphere();
+      this.terrain.improvePoints();
       //this.terrain.makeMesh();
-      this.clear();
+      clear();
       this.visualizeTrianglesColor();
     };
+
     this.generateAndVisualizeMesh = function() {
-      this.terrain.generatePoints();
+      this.terrain.generatePointsFlat();
       this.terrain.makeMesh();
-      this.clear();
+      clear();
       this.visualizeVoronoi();
     };
-    this.generateAndVisualizeMeshSphere = function() {
-      this.terrain.generatePointsSphere();
+
+    this.generateAndVisualizeVoronoi = function() {
+      this.terrain.generatePoints();
       //this.terrain.makeMeshSphere();
-      this.clear();
-      this.visualizeMeshSphere();
+      clear();
+      this.visualizeMesh();
     };
-    this.copyAndVisualizeMesh = function(src) {
+    this.copyAndVisualizeTrianglesFlat = function(src) {
       this.terrain.copy(src.terrain);
       this.terrain.makeMesh();
       //var primH = this.terrain.zero(mesh);
-      this.clear();
-      this.visualizeVoronoi();
+      clear();
+      this.visualizeVoronoiFlat();
     };
-    this.copyAndVisualizeMeshSphere = function(src) {
+    this.copyAndVisualizeVoronoi = function(src) {
       this.terrain.copy(src.terrain);
-      this.clear();
-      this.visualizeMeshSphere();
+      clear();
+      this.visualizeMesh();
     };
-    this.copyAndVisualizeTrianglesSphere = function(src) {
+    this.copyAndVisualizeTriangles = function(src) {
       this.terrain.copy(src.terrain);
-      this.clear();
-      this.visualizeTrianglesSphere();
+      clear();
+      this.visualizeTriangles();
     };
     this.copyAndVisualizeTrianglesColor = function(src) {
       this.terrain.copy(src.terrain);
-      this.clear();
+      clear();
       this.visualizeTrianglesColor();
+    };
+    this.improveAndVisualizePointsFlat = function() {
+      this.terrain.improvePointsFlat();
+      clear();
+      this.visualizePointsFlat();
     };
     this.improveAndVisualizePoints = function() {
       this.terrain.improvePoints();
-      this.clear();
-      this.visualizePoints();
+      clear();
+      this.visualizeOriginalPoints();
     };
-    this.improveAndVisualizePointsSphere = function() {
-      this.terrain.improvePointsSphere();
-      this.clear();
-      this.visualizePointsSphere();
+    this.improveAndVisualizeTriangles = function() {
+      this.terrain.improvePoints();
+      clear();
+      this.visualizeTriangles();
     };
-    this.improveAndVisualizeTrianglesSphere = function() {
-      this.terrain.improvePointsSphere();
-      this.clear();
-      this.visualizeTrianglesSphere();
+
+    this.generateAndVisualizeTriangles = function() {
+      this.terrain.generateGoodPoints();
+      clear();
+      this.visualizeTriangles();
     };
-    this.generateAndVisualizeTrianglesSphere = function() {
-      this.terrain.generateGoodPointsSphere();
-      this.clear();
-      this.visualizeTrianglesSphere();
-    };
+
     this.generateAndVisualizeTrianglesColor = function() {
-      this.terrain.generateGoodPointsSphere();
-      this.clear();
+      this.terrain.generateGoodPoints();
+      clear();
       this.visualizeTrianglesColor();
     };
-    this.clear = function() {
-      var ctx = this.canvas.getContext("2d");
+
+    function clear() {
+      var ctx = $this.canvas.getContext("2d");
       // Store the current transformation matrix
       ctx.save();
       // Use the identity matrix while clearing the canvas
       ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+      ctx.clearRect(0, 0, $this.canvas.width, $this.canvas.height);
       // Restore the transform
       ctx.restore();
     };
-    this.visualizePoints = function() {
+    this.visualizePointsFlat = function() {
       var ctx = this.canvas.getContext("2d");
-      //console.log(this.terrain.mesh);
       this.terrain.points.forEach(function(p) {
-        //console.log(p);
         ctx.beginPath();
-        ctx.arc((p[0] + .5) * $this.params.canvasWidth, (p[1] + .5) * $this.params.canvasHeight, 2, 0, Math.PI * 2);
+        ctx.arc((p[0] + .5) * $this.canvas.width, //center x
+                (p[1] + .5) * $this.canvas.width, //center y
+                2, //radius
+                0,//start angle
+                Math.PI * 2//end angle
+                );
         ctx.stroke();
         ctx.fill();
         ctx.closePath();
       });
+    }
+
+    function visualizeGeoJson(points){
+	  var projection = getProjection();
+      var ctx = $this.canvas.getContext("2d");
+      var path = d3.geoPath().projection(projection).context(ctx);
+      ctx.beginPath();
+      path(points);
+      ctx.stroke();
+    }
+
+    this.visualizeVoronoiPoints=function(){
+      var projection = getProjection();
+      var ctx = this.canvas.getContext("2d");
+      var path = d3.geoPath().projection(projection).context(ctx);
     };
-    this.visualizePointsSphere = function() {
+
+    this.visualizeOriginalPoints = function() {
+	  clear();
+      visualizeBorder();
+      visualizeGeoJson({
+        'type': 'MultiPoint',
+        'coordinates': this.terrain.points
+      })
+    };
+
+    this.visualizePoints2 = function() {
       var projection =getProjection();
       //get the function that generates the d attribute from svg's line function, not directly usable for canvas
       var ctx = this.canvas.getContext("2d");
       var path = d3.geoPath().projection(projection).context(ctx);
-      visualizeBorder();
       var randomPoint = {
         'type': 'MultiPoint',
         'coordinates': this.terrain.points
@@ -186,11 +204,12 @@ class TerrainUI {
       ctx.stroke();
     };
 
-    this.visualizeTrianglesSphere = function() {
+    this.visualizeTriangles = function() {
       var projection = getProjection();
       //get the function that generates the d attribute from svg's line function, not directly usable for canvas
       var ctx = this.canvas.getContext("2d");
       var path = d3.geoPath().projection(projection).context(ctx);
+      clear();
       visualizeBorder();
       ctx.beginPath();
       //console.log(this.terrain.triangles);
@@ -198,15 +217,59 @@ class TerrainUI {
       ctx.stroke();
     };
 
+    
+
+    this.visualizeTriangles2 = function() {
+      var projection = getProjection();
+      //get the function that generates the d attribute from svg's line function, not directly usable for canvas
+      var ctx = this.canvas.getContext("2d");
+      var path = d3.geoPath().projection(projection).context(ctx);
+ 
+      //var hi = d3.max(this.terrain.heightMap) + 1e-9;
+      //var lo = d3.min(this.terrain.heightMap) - 1e-9;
+      //convert all the values to 0-1 so that we can interpolate them later
+      //var mappedvals = this.terrain.heightMap.map(function(x) {
+      //  return x > hi ? 1 : x < lo ? 0 : (x - lo) / (hi - lo);
+      //});
+
+//same as triangles: d_edges,d_triangles
+//same as voronoi:
+
+      var edges=this.terrain.d_edges;
+      for (var f in edges) {
+        var edge = edges[f];
+        var start = this.terrain.d_centers[edge[0]];
+        var stop = this.terrain.d_centers[edge[1]];
+        //var startPixel = projection(start);
+        //var stopPixel = projection(stop);
+        //var startHeight = mappedvals[edge[0]];
+        //var stopHeight = mappedvals[edge[1]];
+        //var startColor = d3.interpolateViridis(startHeight);
+        //var stopColor = d3.interpolateViridis(stopHeight);
+        //var grad = ctx.createLinearGradient(startPixel[0], startPixel[1], stopPixel[0], stopPixel[1]);
+        //grad.addColorStop(0, startColor);
+        //grad.addColorStop(1, stopColor);
+        ctx.beginPath();
+        var a = {
+          'type': 'LineString',
+          'coordinates': [start, stop]
+        };
+        path(a);
+        //ctx.strokeStyle = grad;
+        //ctx.fillStyle=grad;
+        ctx.stroke();
+      }
+    };
+
     this.visualizeLand=function(){
-	  this.clear();
+	  clear();
       visualizeSeaLevel();
     };
 
     this.addMountainAndVisualizeTrianglesColor = function() {
       //TODO add mountain
-      this.terrain.mountains(5);
-      this.clear();
+      this.terrain.mountains(1);
+      clear();
       this.visualizeTrianglesColor();
       visualizeSeaLevel();
     };
@@ -215,7 +278,7 @@ class TerrainUI {
       var width = $this.canvas.width,
         height = $this.canvas.height;
       return  d3.geoWinkel3()
-        .scale(width / 6.4)
+        .scale(width / 5.2)
         .translate([width / 2, height / 2])
         .rotate([0,-30,-30])
         .precision(1);
@@ -246,74 +309,39 @@ class TerrainUI {
       ctx.stroke();
     }
 
-    this.visualizeTrianglesColor = function() {
-     
+    this.visualizeMesh = function() {
       var projection = getProjection();
       //get the function that generates the d attribute from svg's line function, not directly usable for canvas
       var ctx = this.canvas.getContext("2d");
       var path = d3.geoPath().projection(projection).context(ctx);
-      visualizeBorder()
-
-      var hi = d3.max(this.terrain.heightMap) + 1e-9;
-      var lo = d3.min(this.terrain.heightMap) - 1e-9;
-      //convert all the values to 0-1 so that we can interpolate them later
-      var mappedvals = this.terrain.heightMap.map(function(x) {
-        return x > hi ? 1 : x < lo ? 0 : (x - lo) / (hi - lo);
-      });
-      for (var f in this.terrain.edges) {
-        var edge = this.terrain.edges[f];
-        var start = this.terrain.points[edge[0]];
-        var stop = this.terrain.points[edge[1]];
-        var startPixel = projection(start);
-        var stopPixel = projection(stop);
-        var startHeight = mappedvals[edge[0]];
-        var stopHeight = mappedvals[edge[1]];
-        var startColor = d3.interpolateViridis(startHeight);
-        var stopColor = d3.interpolateViridis(stopHeight);
-        var grad = ctx.createLinearGradient(startPixel[0], startPixel[1], stopPixel[0], stopPixel[1]);
-        grad.addColorStop(0, startColor);
-        grad.addColorStop(1, stopColor);
-        ctx.beginPath();
-        var a = {
-          'type': 'LineString',
-          'coordinates': [start, stop]
-        };
-        path(a);
-        ctx.strokeStyle = grad;
-        //ctx.fillStyle=grad;
-        ctx.stroke();
-      }
+      clear();
+      visualizeBorder();
+      visualizeGeoJson(this.terrain.cellMesh);
     };
 
-    this.visualizeMeshSphere = function() {
+    this.visualizeTrianglesAndMeshSphere = function() {
       var projection = getProjection()
       //get the function that generates the d attribute from svg's line function, not directly usable for canvas
       var ctx = this.canvas.getContext("2d");
       var path = d3.geoPath().projection(projection).context(ctx);
+      clear();
       visualizeBorder();
-      ctx.beginPath();
+      
       //console.log(this.terrain.cellMesh);
-      path(this.terrain.cellMesh);
+     
+
+      ctx.beginPath();
+      path(this.terrain.cellMesh);  
+      ctx.strokeStyle = "#00F";
       ctx.stroke();
+
+      ctx.beginPath();
+      path(this.terrain.cellMesh);
+      ctx.strokeStyle = "#0F0";
+      ctx.stroke();
+
     };
-    this.visualizeVoronoi = function() {
-      var ctx = this.canvas.getContext("2d");
-      var hi = d3.max(this.terrain.mesh) + 1e-9;
-      var lo = d3.min(this.terrain.mesh) - 1e-9;
-      var mappedvals = this.terrain.heightMap.map(function(x) {
-        return x > hi ? 1 : x < lo ? 0 : (x - lo) / (hi - lo);
-      });
-      this.terrain.edges.forEach(function(e) {
-        var a = e[2];
-        var b = e[3];
-        if (typeof a != 'undefined' && typeof b != 'undefined') {
-          //console.log(e);
-          ctx.beginPath();
-          ctx.moveTo((a[0] + .5) * 400, (a[1] + .5) * 200);
-          ctx.lineTo((b[0] + .5) * 400, (b[1] + .5) * 200);
-          ctx.stroke();
-        }
-      });
-    };
+
+    this.visualizeVoronoi =this.visualizeMesh;
   }
 }

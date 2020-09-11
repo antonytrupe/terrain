@@ -1,4 +1,8 @@
 "use strict";
+const DEFAULT_EXTENT = {
+  'width': 1,
+  'height': 1
+};
 
 class Terrain {
   constructor(extent) {
@@ -6,11 +10,73 @@ class Terrain {
     var $this = this;
     this.extent = extent || DEFAULT_EXTENT;
     this.points = [];
-    this.mesh = {};
+    this.centers=[];
+/**
+GEOJSON object used for drawing
+ */
     this.cellMesh = [];
+/**
+GEOJSON object used for drawing
+ */
+    this.triangles=[];//same as d_edges
     this.edges = [];
     this.heightMap = [];
     this.neighbors = [];
+    var myrng = new Math.seedrandom(0);
+
+
+    this.update = function() {
+      //this.d_hull=       	d3.geoDelaunay(this.points).hull;
+      this.d_edges =       	d3.geoDelaunay(this.points).edges;
+      this.d_triangles =	d3.geoDelaunay(this.points).triangles;
+      this.d_centers =       	d3.geoDelaunay(this.points).centers;
+      //polygon neighbors
+      this.d_neighbors =   	d3.geoDelaunay(this.points).neighbors;
+      //polygon ids and their point ids
+      this.d_points=		d3.geoDelaunay(this.points).points;
+      this.d_polygons =		d3.geoDelaunay(this.points).polygons;
+      this.d_mesh=       	d3.geoDelaunay(this.points).mesh;
+      this.cellMesh =      	d3.geoVoronoi().cellMesh(this.points);
+      this.triangles =     	d3.geoVoronoi().triangles(this.points);
+
+      for (var poly_id = 0; poly_id < this.d_neighbors.length; poly_id++) {
+        var neighbor_list = this.d_neighbors[poly_id];
+        var polygon_vertices = this.d_polygons[poly_id];
+        for (var j = 0; j < neighbor_list.length; j++) {
+          var neighbor_id = neighbor_list[j];
+          var neighbor_vertices = this.d_polygons[neighbor_id];
+          var shared_vertices = polygon_vertices.filter(value => neighbor_vertices.includes(value));
+          //console.log(shared_vertices);
+          //make sure the lists are initialized
+          if (!this.neighbors[shared_vertices[0]]) {
+            this.neighbors[shared_vertices[0]] = [];
+          }
+          if (!this.neighbors[shared_vertices[1]]) {
+            this.neighbors[shared_vertices[1]] = [];
+          }
+          //make sure we're not adding duplicates'
+          if (this.neighbors[shared_vertices[0]].indexOf(shared_vertices[1]) == -1) {
+            this.neighbors[shared_vertices[0]].push(shared_vertices[1]);
+          }
+          if (this.neighbors[shared_vertices[1]].indexOf(shared_vertices[0]) == -1) {
+
+            this.neighbors[shared_vertices[1]].push(shared_vertices[0]);
+          }
+        }
+      }
+      //console.log(this.neighbors);
+      //this.v_polygons = d3.geoVoronoi().polygons(this.points);
+     
+      //this.v_mesh = d3.geoDelaunay(this.points).mesh;
+
+      //this.neighbors=d3.geoDelaunay(this.points).neighbors;
+      //this.neighbors=d3.geoDelaunay(this.points).triangles;
+      //this.centers = d3.geoVoronoi().centers(this.points);
+
+      //generateEdgeNeighbors();
+      //console.log(this);
+    };
+
 
     function neighbours(i) {
       var onbs = $this.neighbors[i];
@@ -51,7 +117,9 @@ class Terrain {
         for (var i = 0; i < h.length; i++) {
           newh[i] = h[i];
           var nbs = neighbours(i);
-          if (h[i] > 0 || nbs.length != 3) {continue;}
+          if (h[i] > 0 || nbs.length != 3) {
+            continue;
+          }
           var count = 0;
           var best = 999999;
           for (var j = 0; j < nbs.length; j++) {
@@ -61,7 +129,9 @@ class Terrain {
               best = h[nbs[j]];
             }
           }
-          if (count > 1) {continue;}
+          if (count > 1) {
+            continue;
+          }
           newh[i] = best / 2;
         }
         h = newh;
@@ -155,7 +225,8 @@ class Terrain {
         }
       }
       //console.log(edges);
-      return mergeSegments(edges);
+      var merged = mergeSegments(edges);
+      return merged;
     };
 
     function quantile(h, q) {
@@ -167,20 +238,20 @@ class Terrain {
       return d3.quantile(sortedh, q);
     }
 
-    this.generateGoodPointsSphere = function() {
-      this.generatePointsSphere();
-      this.points = this.points.sort(function(a, b) {
-        return a[0] - b[0];
-      });
-      this.improvePointsSphere();
-    };
-
     this.generateGoodPoints = function() {
       this.generatePoints();
       this.points = this.points.sort(function(a, b) {
         return a[0] - b[0];
       });
       this.improvePoints();
+    };
+
+    this.generateGoodPointsFlat = function() {
+      this.generatePoints();
+      this.points = this.points.sort(function(a, b) {
+        return a[0] - b[0];
+      });
+      this.improvePointsFlat();
     };
 
     this.add = function(a) {
@@ -285,7 +356,7 @@ class Terrain {
     };
     this.zeroHeightMap = function() {
       this.heightMap = [];
-      this.heightMap.length = this.points.length;
+      this.heightMap.length = this.centers.length;
       this.heightMap.fill(0);
     };
 
@@ -296,22 +367,23 @@ class Terrain {
       this.zeroHeightMap();
     };
 
-    this.generatePoints = function(n) {
+    this.generatePointsFlat = function(n) {
       var n = n || 256;
       this.points = [];
       for (var i = 0; i < n; i++) {
-        this.points.push([(Math.random() - .5) * this.extent.width, (Math.random() - .5) * this.extent.height]);
+        this.points.push([(myrng() - .5) * this.extent.width,
+                          (myrng() - .5) * this.extent.height]);
       }
     };
 
     function randomPoint() {
-      var lat = Math.acos(Math.random() * 2 - 1) / Math.PI * 180 - 90;
-      var lon = Math.random() * 360 - 180;
+      var lat = Math.acos(myrng() * 2 - 1) / Math.PI * 180 - 90;
+      var lon = myrng() * 360 - 180;
       return [lon, lat];
     }
 
-    this.generatePointsSphere = function(n) {
-      var n = n || 1024;
+    this.generatePoints = function(n) {
+      var n = n || 16;
       this.points = [];
       for (var i = 0; i < n; i++) {
         this.points.push(randomPoint());
@@ -321,7 +393,9 @@ class Terrain {
       this.zeroHeightMap();
     };
 
-    function generateNeighbors() {
+    function generateEdgeNeighbors() {
+      console.log($this.edges);
+      var foo = d3.geoDelaunay($this.points).neighbors;
       var vxs = [];
       var vxids = {};
       var adj = [];
@@ -370,23 +444,15 @@ class Terrain {
       $this.neighbors = adj;
     }
 
-    this.update = function() {
-      this.triangles = d3.geoVoronoi().triangles(this.points);
-      this.cellMesh = d3.geoVoronoi().cellMesh(this.points);
-      this.edges = d3.geoDelaunay(this.points).edges;
+    
 
-      this.voronoiEdges = d3.geoDelaunay(this.points).mesh;
-      generateNeighbors();
-      console.log(this);
-    };
-
-    this.improvePoints = function(n) {
+    this.improvePointsFlat = function(n) {
       var n = n || 1;
       for (var i = 0; i < n; i++) {
         this.points = voronoi().polygons($this.points).map(centroid);
       }
     };
-    this.improvePointsSphere = function(n) {
+    this.improvePoints = function(n) {
       var n = n || 1;
       for (var i = 0; i < n; i++) {
         var a = d3.geoVoronoi($this.points).polygons().features.map(centroidSphere);
