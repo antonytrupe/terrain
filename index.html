@@ -271,8 +271,8 @@ this.visualizePointsFlat = function() {
           var canvas = d3.select("#sphere_random_points");      
           var sphere_random_points=new TerrainUI(canvas.node());
         </script>
-        <button onclick="sphere_random_points.generateAndVisualizePoints()">Generate Points</button>
-        <button onclick="sphere_random_points.improveAndVisualizePoints()">Improve Points</button>
+        <button onclick="sphere_random_points.generateAndVisualizePointsAndBorder()">Generate Points</button>
+        <button onclick="sphere_random_points.improveAndVisualizePointsAndBorder()">Improve Points</button>
       </div>
     </div>
     <!--show voronoi polygons-->
@@ -306,26 +306,13 @@ this.visualizePointsFlat = function() {
         <button onclick="triangles_andor_polygons.generateAndVisualizeVoronoi()">Generate Points</button>
         <button onclick="triangles_andor_polygons.improveAndVisualizeVoronoi()">Improve Points</button>
         <button onclick="triangles_andor_polygons.visualizeVoronoi()">Show Voronoi</button>
-        <button onclick="triangles_andor_polygons.visualizePoints()">Show Original Points</button>
+        <button onclick="triangles_andor_polygons.visualizeOriginalPoints()">Show Original Points</button>
         <button onclick="triangles_andor_polygons.visualizeVoronoiPoints()">Show Voronoi Points</button>
         <button onclick="triangles_andor_polygons.visualizeVoronoiEdges()">Show Voronoi Edges</button>
+        <button onclick="triangles_andor_polygons.visualizeTriangles()">Show Triangles</button>
       </div>
     </div>
-    <!--show color coded triangle edges-->
-    <div class="a">
-      <div class="step" >
-        <p>Triangles with color</p>
-        <p style="float:left;"></p>
-        <canvas id="tri_colors" width="320" height="200" ></canvas>
-        <script>
-          //get the canvas
-          var tri_colors=new TerrainUI(document.getElementById('tri_colors'));
-        </script>
-        <button onclick="tri_colors.copyAndVisualizeTrianglesColor(triangles_andor_polygons)">Copy from Above</button>
-        <button onclick="tri_colors.generateAndVisualizeTrianglesColor()">Generate Points</button>
-        <button onclick="tri_colors.improveAndVisualizeTrianglesColor()">Improve Points</button>
-      </div>
-    </div>
+
     <!--transformations, coast-->
     <div class="a">
       <div class="step" >
@@ -336,11 +323,11 @@ this.visualizePointsFlat = function() {
           //get the canvas
           var transformations_coast=new TerrainUI(document.getElementById('transformations_coast'));
         </script>
-        <button onclick="transformations_coast.copyAndVisualizeTrianglesColor(tri_colors)">Copy from Above</button>
-        <button onclick="transformations_coast.generateAndVisualizeTrianglesColor()">Generate Good Points</button>
-        <button onclick="transformations_coast.improveAndVisualizeTrianglesColor()">Improve Points</button>
-        <button onclick="transformations_coast.addMountainAndVisualizeTrianglesColor()">Add five blobs</button>
-        <button onclick="transformations_coast.setSeaLevelToMedianAndVisualize()">Set sea level to median</button>
+        <button onclick="transformations_coast.copyAndVisualizeHightmap(triangles_andor_polygons)">Copy from Above</button>
+        <button onclick="transformations_coast.generateAndVisualizeHeightmap()">Generate Good Points</button>
+        <button onclick="transformations_coast.improveAndVisualizeHeightmap()">Improve Points</button>
+        <button onclick="transformations_coast.addMountainAndVisualizeHeightmap()">Add five blobs</button>
+        <button onclick="transformations_coast.setSeaLevelToMedianAndVisualizeHeightmap()">Set sea level to median</button>
         <button onclick="transformations_coast.cleanCoast()">Clean coast</button>
         <button onclick="transformations_coast.visualizeLand()">Draw Land</button>
       </div>

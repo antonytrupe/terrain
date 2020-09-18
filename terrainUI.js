@@ -10,7 +10,7 @@ class TerrainUI {
 
     this.cleanCoast=function(){
       this.terrain.cleanCoast();
-	  this.clear();
+	  clear();
 	  //this.visualizeTrianglesColor();
       visualizeSeaLevel();
     };
@@ -21,10 +21,10 @@ class TerrainUI {
       this.visualizePointsFlat();
     };
 
-    this.setSeaLevelToMedianAndVisualize=function(){
-	  this.clear();
+    this.setSeaLevelToMedianAndVisualizeHeightmap=function(){
+	  clear();
       this.terrain.setSeaLevel(.5);
-      this.visualizeTrianglesColor();
+      visualizeHeightmap();
       visualizeSeaLevel();
     };
 
@@ -59,6 +59,14 @@ class TerrainUI {
       clear();
       this.visualizeOriginalPoints();
     };
+
+    this.generateAndVisualizePointsAndBorder = function() {
+      this.terrain.generatePoints();
+      clear();
+      visualizeBorder()
+      this.visualizeOriginalPoints();
+    };
+
     this.improveAndVisualizeMesh = function() {
       this.terrain.improvePointsFlat();
       this.terrain.makeMesh();
@@ -70,11 +78,11 @@ class TerrainUI {
       clear();
       this.visualizeMesh();
     };
-    this.improveAndVisualizeTrianglesColor = function() {
+    this.improveAndVisualizeHeightmap = function() {
       this.terrain.improvePoints();
       //this.terrain.makeMesh();
       clear();
-      this.visualizeTrianglesColor();
+      visualizeHeightmap();
     };
 
     this.generateAndVisualizeMesh = function() {
@@ -102,16 +110,12 @@ class TerrainUI {
       clear();
       this.visualizeMesh();
     };
-    this.copyAndVisualizeTriangles = function(src) {
+    this.copyAndVisualizeHightmap = function(src) {
       this.terrain.copy(src.terrain);
       clear();
-      this.visualizeTriangles();
+      visualizeHeightmap();
     };
-    this.copyAndVisualizeTrianglesColor = function(src) {
-      this.terrain.copy(src.terrain);
-      clear();
-      this.visualizeTrianglesColor();
-    };
+   
     this.improveAndVisualizePointsFlat = function() {
       this.terrain.improvePointsFlat();
       clear();
@@ -120,6 +124,12 @@ class TerrainUI {
     this.improveAndVisualizePoints = function() {
       this.terrain.improvePoints();
       clear();
+      this.visualizeOriginalPoints();
+    };
+    this.improveAndVisualizePointsAndBorder = function() {
+      this.terrain.improvePoints();
+      clear();
+      visualizeBorder();
       this.visualizeOriginalPoints();
     };
     this.improveAndVisualizeTriangles = function() {
@@ -134,10 +144,10 @@ class TerrainUI {
       this.visualizeTriangles();
     };
 
-    this.generateAndVisualizeTrianglesColor = function() {
+    this.generateAndVisualizeHeightmap = function() {
       this.terrain.generateGoodPoints();
       clear();
-      this.visualizeTrianglesColor();
+      visualizeHeightmap();
     };
 
     function clear() {
@@ -150,6 +160,7 @@ class TerrainUI {
       // Restore the transform
       ctx.restore();
     };
+
     this.visualizePointsFlat = function() {
       var ctx = this.canvas.getContext("2d");
       this.terrain.points.forEach(function(p) {
@@ -164,30 +175,110 @@ class TerrainUI {
         ctx.fill();
         ctx.closePath();
       });
-    }
+    };
 
-    function visualizeGeoJson(points){
+    function visualizeGeoJson(geojson){
 	  var projection = getProjection();
       var ctx = $this.canvas.getContext("2d");
       var path = d3.geoPath().projection(projection).context(ctx);
       ctx.beginPath();
-      path(points);
+      path(geojson);
       ctx.stroke();
     }
 
-    this.visualizeVoronoiPoints=function(){
-      var projection = getProjection();
-      var ctx = this.canvas.getContext("2d");
-      var path = d3.geoPath().projection(projection).context(ctx);
+    this.visualizeVoronoiEdges=function(){
+      //clear();
+      //visualizeBorder();
+      visualizeEdges(this.terrain.edges,this.terrain.getCenters());
     };
 
-    this.visualizeOriginalPoints = function() {
-	  clear();
+    function visualizeHeightmap(){
+	  //console.log(this.terrain.edges);
+      clear();
       visualizeBorder();
+      //visualizeEdges($this.terrain.edges,$this.terrain.centers);
+
+      var projection = getProjection();
+      //get the function that generates the d attribute from svg's line function, not directly usable for canvas
+      var ctx = $this.canvas.getContext("2d");
+      var path = d3.geoPath().projection(projection).context(ctx);
+      var heightMap=$this.terrain.getHeightMap()
+      var hi = d3.max(heightMap) + 1e-9;
+      var lo = d3.min(heightMap) - 1e-9;
+      //convert all the values to 0-1 so that we can interpolate them later
+      var mappedvals = heightMap.map(function(x) {
+        return x > hi ? 1 : x < lo ? 0 : (x - lo) / (hi - lo);
+      });
+
+      var edges=$this.terrain.edges;
+      var centers=$this.terrain.getCenters();
+      for (var f in edges) {
+        var edge = edges[f];
+        var start = centers[edge[0]];
+        var stop = centers[edge[1]];
+
+        var startPixel = projection(start);
+        var stopPixel = projection(stop);
+
+        var h0=heightMap[edge[0]];
+        var h1=heightMap[edge[1]];
+
+
+        var startHeight = mappedvals[edge[0]];
+        var stopHeight = mappedvals[edge[1]];
+        if(h0>0 || h1>0){
+          var startColor = d3.interpolateViridis(startHeight);
+          var stopColor = d3.interpolateViridis(stopHeight);
+          var grad = ctx.createLinearGradient(startPixel[0], startPixel[1], stopPixel[0], stopPixel[1]);
+          grad.addColorStop(0, startColor);
+          grad.addColorStop(1, stopColor);
+          ctx.beginPath();
+          var a = {
+            'type': 'LineString',
+            'coordinates': [start, stop]
+        };
+        path(a);
+        ctx.strokeStyle = grad;
+        ctx.fillStyle=grad;
+        ctx.stroke();
+}
+      }
+
+    }
+
+    function visualizeEdges(edges,points){
+	  var geojson={'type':'MultiLineString','coordinates':[]};
+	  for (var f in edges) {
+        var edge = edges[f];
+	    var start = points[edge[0]];
+        var stop = points[edge[1]];
+        geojson.coordinates.push([start,stop]);
+      }
+      visualizeGeoJson(geojson);
+    }
+    /**
+    the vertices of the voronoi polygons, terrain.centers
+    */
+    this.visualizeVoronoiPoints=function(){
+      //clear();
+      //visualizeBorder();
+      visualizePoints(this.terrain.getCenters());
+    };
+
+    function visualizePoints(points){
+      visualizeGeoJson({
+        'type': 'MultiPoint',
+        'coordinates': points
+      });
+    }
+
+    this.visualizeOriginalPoints = function() {
+	  //clear();
+      //visualizeBorder();
       visualizeGeoJson({
         'type': 'MultiPoint',
         'coordinates': this.terrain.points
-      })
+      });
     };
 
     this.visualizePoints2 = function() {
@@ -210,68 +301,26 @@ class TerrainUI {
       var ctx = this.canvas.getContext("2d");
       var path = d3.geoPath().projection(projection).context(ctx);
       clear();
-      visualizeBorder();
+      //visualizeBorder();
       ctx.beginPath();
       //console.log(this.terrain.triangles);
-      path(this.terrain.triangles);
+      path(d3.geoVoronoi().triangles(this.terrain.points));
       ctx.stroke();
     };
 
     
-
-    this.visualizeTriangles2 = function() {
-      var projection = getProjection();
-      //get the function that generates the d attribute from svg's line function, not directly usable for canvas
-      var ctx = this.canvas.getContext("2d");
-      var path = d3.geoPath().projection(projection).context(ctx);
- 
-      //var hi = d3.max(this.terrain.heightMap) + 1e-9;
-      //var lo = d3.min(this.terrain.heightMap) - 1e-9;
-      //convert all the values to 0-1 so that we can interpolate them later
-      //var mappedvals = this.terrain.heightMap.map(function(x) {
-      //  return x > hi ? 1 : x < lo ? 0 : (x - lo) / (hi - lo);
-      //});
-
-//same as triangles: d_edges,d_triangles
-//same as voronoi:
-
-      var edges=this.terrain.d_edges;
-      for (var f in edges) {
-        var edge = edges[f];
-        var start = this.terrain.d_centers[edge[0]];
-        var stop = this.terrain.d_centers[edge[1]];
-        //var startPixel = projection(start);
-        //var stopPixel = projection(stop);
-        //var startHeight = mappedvals[edge[0]];
-        //var stopHeight = mappedvals[edge[1]];
-        //var startColor = d3.interpolateViridis(startHeight);
-        //var stopColor = d3.interpolateViridis(stopHeight);
-        //var grad = ctx.createLinearGradient(startPixel[0], startPixel[1], stopPixel[0], stopPixel[1]);
-        //grad.addColorStop(0, startColor);
-        //grad.addColorStop(1, stopColor);
-        ctx.beginPath();
-        var a = {
-          'type': 'LineString',
-          'coordinates': [start, stop]
-        };
-        path(a);
-        //ctx.strokeStyle = grad;
-        //ctx.fillStyle=grad;
-        ctx.stroke();
-      }
-    };
 
     this.visualizeLand=function(){
 	  clear();
       visualizeSeaLevel();
     };
 
-    this.addMountainAndVisualizeTrianglesColor = function() {
+    this.addMountainAndVisualizeHeightmap = function() {
       //TODO add mountain
       this.terrain.mountains(1);
       clear();
-      this.visualizeTrianglesColor();
-      visualizeSeaLevel();
+      visualizeHeightmap();
+      //visualizeSeaLevel();
     };
 
     function getProjection(){
@@ -280,7 +329,7 @@ class TerrainUI {
       return  d3.geoWinkel3()
         .scale(width / 5.2)
         .translate([width / 2, height / 2])
-        .rotate([0,-30,-30])
+        .rotate([60,0,0])
         .precision(1);
     }
 
@@ -297,6 +346,9 @@ class TerrainUI {
       ctx.stroke();
     }
 
+    /**
+    add lat/lon lines
+    */
     function visualizeGraticuls(){
       var projection = getProjection();
       var ctx = this.canvas.getContext("2d");
@@ -310,13 +362,13 @@ class TerrainUI {
     }
 
     this.visualizeMesh = function() {
-      var projection = getProjection();
+      //var projection = getProjection();
       //get the function that generates the d attribute from svg's line function, not directly usable for canvas
-      var ctx = this.canvas.getContext("2d");
-      var path = d3.geoPath().projection(projection).context(ctx);
+      //var ctx = this.canvas.getContext("2d");
+      //var path = d3.geoPath().projection(projection).context(ctx);
       clear();
       visualizeBorder();
-      visualizeGeoJson(this.terrain.cellMesh);
+      visualizeGeoJson(this.terrain.getCellMesh());
     };
 
     this.visualizeTrianglesAndMeshSphere = function() {
@@ -328,18 +380,11 @@ class TerrainUI {
       visualizeBorder();
       
       //console.log(this.terrain.cellMesh);
-     
 
       ctx.beginPath();
-      path(this.terrain.cellMesh);  
+      path(this.terrain.voronoi.cellMesh);  
       ctx.strokeStyle = "#00F";
       ctx.stroke();
-
-      ctx.beginPath();
-      path(this.terrain.cellMesh);
-      ctx.strokeStyle = "#0F0";
-      ctx.stroke();
-
     };
 
     this.visualizeVoronoi =this.visualizeMesh;
