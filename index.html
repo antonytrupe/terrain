@@ -71,6 +71,10 @@
     <script src="https://unpkg.com/d3-delaunay@5"></script>
     <!-- support for spherical delaunay data -->
     <script src="https://unpkg.com/d3-geo-voronoi@1.6.0/dist/d3-geo-voronoi.js"></script>
+    <!-- support for contour functionality -->
+    <script src="https://unpkg.com/d3-tricontour@0.1.0"></script>
+    <!-- support for zoom and panning -->
+    <script src="https://unpkg.com/d3-geo-zoom"></script>
     <!-- psudo random number generator that is seedable, nice for being able to reproduce issues -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/seedrandom/3.0.5/seedrandom.min.js"></script>
     <!-- help to syntax highlight code thats on the screen -->
@@ -323,13 +327,28 @@ this.visualizePointsFlat = function() {
           //get the canvas
           var transformations_coast=new TerrainUI(document.getElementById('transformations_coast'));
         </script>
-        <button onclick="transformations_coast.copyAndVisualizeHightmap(triangles_andor_polygons)">Copy from Above</button>
+        <button onclick="transformations_coast.copyAndVisualizeHeightmap(triangles_andor_polygons)">Copy from Above</button>
         <button onclick="transformations_coast.generateAndVisualizeHeightmap()">Generate Good Points</button>
         <button onclick="transformations_coast.improveAndVisualizeHeightmap()">Improve Points</button>
-        <button onclick="transformations_coast.addMountainAndVisualizeHeightmap()">Add five blobs</button>
+        <button onclick="transformations_coast.addContinentAndVisualizeHeightmap(1)">Add one continents</button>
+        <button onclick="transformations_coast.addIslandAndVisualizeHeightmap(5)">Add five islands</button>
         <button onclick="transformations_coast.setSeaLevelToMedianAndVisualizeHeightmap()">Set sea level to median</button>
-        <button onclick="transformations_coast.cleanCoast()">Clean coast</button>
-        <button onclick="transformations_coast.visualizeLand()">Draw Land</button>
+        <button onclick="transformations_coast.visualizeCoast()">Draw Coast</button>
+      </div>
+    </div>
+    
+    <!--zoom, pan-->
+    <div class="a">
+      <div class="step" >
+        <p>Zoom, Panning</p>
+        <p style="float:left;"></p>
+        <canvas id="zoompan" width="320" height="200" ></canvas>
+        <script>
+          //get the canvas
+          var zoompan=new TerrainUI(document.getElementById('zoompan'));
+          zoompan.addZoomPan();
+        </script>
+        <button onclick="zoompan.copyAndVisualizeHeightmap(transformations_coast)">Copy from Above</button>
       </div>
     </div>
   </body>
