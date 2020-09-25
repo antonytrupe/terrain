@@ -13,7 +13,6 @@ class Terrain {
     /**[[lat,lon,height]] */
     var points = [];
     var edges = [];
-    //var heightMap = [];
     var srand = new Math.seedrandom(SEED);
     var delaunay={};
     var voronoi={};
@@ -53,7 +52,6 @@ class Terrain {
              edges.push(edge);
         }
       }
-      //heightMap.length=	delaunay.centers.length;
 
       var h;
       edges=edges.filter(( h={},a=>!(h[a]=a in h)));
@@ -74,92 +72,22 @@ class Terrain {
       var h=points.map(p=>p[2])
       var lo = d3.min(h);
       var hi = d3.max(h);
+      //short circuit if its a flat world
+      if(hi==lo){
+	    return;
+      }
       points.forEach((x)=> {x[2]=(x[2] - lo) / (hi - lo)});
     };
     
-
     this.setSeaLevel = function(q) {
-      var newh = []
-      newh.length = points.length;
-      newh.fill(0);
-      var delta = quantile(points.map(x=>x[2]), q);
+      var s=points.map(x=>x[2]).sort(d3.ascending);
+      var delta = d3.quantile(s, q);
       //console.log(delta);
       for (var i = 0; i < points.length; i++) {
         points[i][2] -= delta;
+        //console.log( points[i][2]);
       }
     };
-
-    function mergeSegments(segs) {
-      var adj = {};
-      for (var i = 0; i < segs.length; i++) {
-        var seg = segs[i];
-        var a0 = adj[seg[0]] || [];
-        var a1 = adj[seg[1]] || [];
-        a0.push(seg[1]);
-        a1.push(seg[0]);
-        adj[seg[0]] = a0;
-        adj[seg[1]] = a1;
-      }
-      var done = [];
-      var paths = [];
-      var path = null;
-      while (true) {
-        if (path == null) {
-          for (var i = 0; i < segs.length; i++) {
-            if (done[i]) continue;
-            done[i] = true;
-            path = [segs[i][0], segs[i][1]];
-            break;
-          }
-          if (path == null) break;
-        }
-        var changed = false;
-        for (var i = 0; i < segs.length; i++) {
-          if (done[i]) continue;
-          if (adj[path[0]].length == 2 && segs[i][0] == path[0]) {
-            path.unshift(segs[i][1]);
-          } else if (adj[path[0]].length == 2 && segs[i][1] == path[0]) {
-            path.unshift(segs[i][0]);
-          } else if (adj[path[path.length - 1]].length == 2 && segs[i][0] == path[path.length - 1]) {
-            path.push(segs[i][1]);
-          } else if (adj[path[path.length - 1]].length == 2 && segs[i][1] == path[path.length - 1]) {
-            path.push(segs[i][0]);
-          } else {
-            continue;
-          }
-          done[i] = true;
-          changed = true;
-          break;
-        }
-        if (!changed) {
-          paths.push(path);
-          path = null;
-        }
-      }
-      return paths;
-    }
-
-    this.getCoastPath = function() {
-      this.setSeaLevel(.5);
-      var coast = getContour()
-      return coast;
-    };
-
-    /**
-      return a list of edges [[]]
-    */
-    function getContour (level) {
-      //d3.geoContour().
-    }
-
-    function quantile(h, q) {
-      var sortedh = [];
-      for (var i = 0; i < h.length; i++) {
-        sortedh[i] = h[i];
-      }
-      sortedh.sort(d3.ascending);
-      return d3.quantile(sortedh, q);
-    }
 
     this.generateGoodPoints = function() {
       this.generatePoints();
@@ -178,9 +106,6 @@ class Terrain {
     };
 
     function add(a) {
-      //var newvals = []
-      //newvals.length = points.length;
-      //newvals.fill(0);
       for (var i = 0; i < a.length; i++) {
         points[i][2] += a[i];
       }
@@ -294,19 +219,13 @@ r radians, 2 pi radians is 360 degrees
 	  return edges;
     };
 
-    this.zeroHeightMap = function() {
-      heightMap = [];
-      heightMap.length = delaunay.centers.length;
-      heightMap.fill(0);
-    };
-
     this.getHeightMap=function(){
 	  return points;
     };
 
     this.copy = function(src) {
       //make a deep copy
-      points = JSON.parse(JSON.stringify(src.getPoints()));
+      points = JSON.parse(JSON.stringify(src.getHeightMap()));
       update();
       //this.zeroHeightMap();
     };
@@ -323,7 +242,7 @@ r radians, 2 pi radians is 360 degrees
     function randomPoint() {
       var lat = Math.acos(srand() * 2 - 1) / Math.PI * 180 - 90;
       var lon = srand() * 360 - 180;
-      return [lon, lat,0];
+      return [lon, lat,1e-9];
     }
 
     this.generatePoints = function(n) {
@@ -479,21 +398,10 @@ function isnearedge(mesh, i) {
   return x < -0.45 * w || x > 0.45 * w || y < -0.45 * h || y > 0.45 * h;
 }
 
-
-
 function distance(mesh, i, j) {
   var p = mesh.vxs[i];
   var q = mesh.vxs[j];
   return Math.sqrt((p[0] - q[0]) * (p[0] - q[0]) + (p[1] - q[1]) * (p[1] - q[1]));
-}
-
-function quantile(h, q) {
-  var sortedh = [];
-  for (var i = 0; i < h.length; i++) {
-    sortedh[i] = h[i];
-  }
-  sortedh.sort(d3.ascending);
-  return d3.quantile(sortedh, q);
 }
 
 function slope(mesh, direction) {
@@ -514,13 +422,9 @@ function map(h, f) {
   return newh;
 }
 
-
 function peaky(h) {
   return map(normalize(h), Math.sqrt);
 }
-
-
-
 
 function relax(h) {
   var newh = zero(h.mesh);
@@ -824,8 +728,6 @@ function getBorders(render) {
   return mergeSegments(edges).map(relaxPath);
 }
 
-
-
 function relaxPath(path) {
   var newpath = [path[0]];
   for (var i = 1; i < path.length - 1; i++) {
@@ -838,15 +740,10 @@ function relaxPath(path) {
   return newpath;
 }
 
-
-
-
 function visualizeDownhill(h) {
   var links = getRivers(h, 0.01);
   drawPaths('river', links);
 }
-
-
 
 function visualizeSlopes(svg, render) {
   var h = render.h;
@@ -909,7 +806,6 @@ function visualizeSlopes(svg, render) {
     })
 }
 
-
 function visualizeContour(h, level) {
   level = level || 0;
   var links = contour(h, level);
@@ -920,7 +816,6 @@ function visualizeBorders(h, cities, n) {
   var links = getBorders(h, getTerritories(h, cities, n));
   drawPaths('border', links);
 }
-
 
 function visualizeCities(svg, render) {
   var cities = render.cities;
