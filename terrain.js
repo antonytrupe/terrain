@@ -3,10 +3,9 @@ const DEFAULT_EXTENT = {
   'width': 1,
   'height': 1
 };
-
 class Terrain {
   constructor(extent) {
-    const POINT_COUNT=1024;
+    const POINT_COUNT = 1024;
     const SEED = 996;
     var srand = new Math.seedrandom(SEED);
     var $this = this;
@@ -14,65 +13,59 @@ class Terrain {
     /**[[lat,lon,height]] */
     var points = [];
     var edges = [];
-    var delaunay={};
-    var voronoi={};
-
-    this.getPoints=function(){
-	  return points.map(x => [x[0],x[1]]);
+    var delaunay = {};
+    var voronoi = {};
+    this.getPoints = function() {
+      return points.map(x => [x[0], x[1]]);
     };
-
     /**
       call this if the order or location of the original points changes
     */
-    function update()  {
+    function update() {
       //list of polygon pairs that share edges
-      delaunay.edges =       	d3.geoDelaunay($this.getPoints()).edges;
+      delaunay.edges = d3.geoDelaunay($this.getPoints()).edges;
       //this is the list of vertices of the voronoi polygons
-      delaunay.centers =       	d3.geoDelaunay(points).centers;
+      delaunay.centers = d3.geoDelaunay(points).centers;
       //polygon neighbors by polygon id
-      delaunay.neighbors =   		d3.geoDelaunay(points).neighbors;
+      delaunay.neighbors = d3.geoDelaunay(points).neighbors;
       //polygon ids and their point ids
-      delaunay.points=		d3.geoDelaunay(points).points;
+      delaunay.points = d3.geoDelaunay(points).points;
       //list of center ids that define the polygon vertices
-      delaunay.polygons =		d3.geoDelaunay(points).polygons;
-      delaunay.mesh=       	d3.geoDelaunay(points).mesh;
-      voronoi.cellMesh =      	d3.geoVoronoi().cellMesh(points);
-      voronoi.triangles =     	d3.geoVoronoi().triangles(points);
-
+      delaunay.polygons = d3.geoDelaunay(points).polygons;
+      delaunay.mesh = d3.geoDelaunay(points).mesh;
+      voronoi.cellMesh = d3.geoVoronoi().cellMesh(points);
+      voronoi.triangles = d3.geoVoronoi().triangles(points);
       //compute a list of all edges
-      edges=[];
-      for (var i=0;i<delaunay.neighbors.length;i++) {
-	    var neighbor_polygons=delaunay.neighbors[i];
-        var p1_edges=delaunay.polygons[i];
-	    for(var j=0;j<neighbor_polygons.length;j++){
-          var p2_edges=delaunay.polygons[neighbor_polygons[j]];
+      edges = [];
+      for (var i = 0; i < delaunay.neighbors.length; i++) {
+        var neighbor_polygons = delaunay.neighbors[i];
+        var p1_edges = delaunay.polygons[i];
+        for (var j = 0; j < neighbor_polygons.length; j++) {
+          var p2_edges = delaunay.polygons[neighbor_polygons[j]];
           //find the common points in each polygon
           const edge = p1_edges.filter(element => p2_edges.includes(element));
           edge.sort((a, b) => a - b);
-             edges.push(edge);
+          edges.push(edge);
         }
       }
-
       var h;
-      edges=edges.filter(( h={},a=>!(h[a]=a in h)));
-      edges.sort((a, b) => a[0]!= b[0]?a[0]-b[0]:a[1]-b[1]);
+      edges = edges.filter((h = {}, a => !(h[a] = a in h)));
+      edges.sort((a, b) => a[0] != b[0] ? a[0] - b[0] : a[1] - b[1]);
     }
-
- 
-    
-    this.normalize=function() {
-      var h=points.map(p=>p[2])
+    this.normalize = function() {
+      var h = points.map(p => p[2])
       var lo = d3.min(h);
       var hi = d3.max(h);
       //short circuit if its a flat world
-      if(hi==lo){
-	    return;
+      if (hi == lo) {
+        return;
       }
-      points.forEach((x)=> {x[2]=(x[2] - lo) / (hi - lo)});
+      points.forEach((x) => {
+        x[2] = (x[2] - lo) / (hi - lo)
+      });
     };
-    
     this.setSeaLevel = function(q) {
-      var s=points.map(x=>x[2]).sort(d3.ascending);
+      var s = points.map(x => x[2]).sort(d3.ascending);
       var delta = d3.quantile(s, q);
       //console.log(delta);
       for (var i = 0; i < points.length; i++) {
@@ -80,7 +73,6 @@ class Terrain {
         //console.log( points[i][2]);
       }
     };
-
     this.generateGoodPoints = function() {
       this.generatePoints();
       points = points.sort(function(a, b) {
@@ -88,7 +80,6 @@ class Terrain {
       });
       this.improvePoints(5);
     };
-
     this.generateGoodPointsFlat = function() {
       this.generatePoints();
       points = points.sort(function(a, b) {
@@ -102,17 +93,18 @@ class Terrain {
         points[i][2] += a[i];
       }
     };
-
-    this.mountain=function({center,height,width}){
+    this.mountain = function({
+      center,
+      height,
+      width
+    }) {
       //console.log(center);
-      center=center||randomPoint();
-      height=height||1;
-      width=width||(1*Math.PI)*(1/8);
-	  //console.log(center);
-	  //console.log(height);
-	  console.log(width);
-
-
+      center = center || randomPoint();
+      height = height || 1;
+      width = width || (1 * Math.PI) * (1 / 8);
+      //console.log(center);
+      //console.log(height);
+      console.log(width);
       var newvals = []
       newvals.length = points.length;
       newvals.fill(0);
@@ -121,15 +113,14 @@ class Terrain {
         //distance in radians
         var dr = d3.geoDistance(p, center);
         if (dr < width) {
-          newvals[i] += (Math.cos(Math.PI * dr/width) + 1) * (height/2);
+          newvals[i] += (Math.cos(Math.PI * dr / width) + 1) * (height / 2);
         }
       }
       add(newvals);
     };
-
-/** n number of mountains
-r radians, 2 pi radians is 360 degrees
- */
+    /** n number of mountains
+    r radians, 2 pi radians is 360 degrees
+     */
     this.mountains = function(n, r) {
       r = r || 0.5;
       var mounts = [];
@@ -145,7 +136,6 @@ r radians, 2 pi radians is 360 degrees
         var m = mounts[j];
         for (var i = 0; i < points.length; i++) {
           var p = points[i];
-        
           //var pp = [(p[0] + 90) / 180, (p[1] + 180) / 360];
           //var mm = [(m[0] + 90) / 180, (m[1] + 180) / 360];
           //need to normalize points from [-90|90,-180|180] to [0|1,0|1]
@@ -160,110 +150,107 @@ r radians, 2 pi radians is 360 degrees
       //console.log(newvals);
       add(newvals);
     };
-/*
-    this.makeMesh = function(pts, extent) {
-      //extent = extent || defaultExtent;
-      var vor = voronoi(pts, extent);
-      var vxs = [];
-      var vxids = {};
-      var adj = [];
-      this.edges = [];
-      var tris = [];
-      for (var i = 0; i < vor.edges.length; i++) {
-        var e = vor.edges[i];
-        if (e == undefined) {
-          continue;
-        }
-        var e0 = vxids[e[0]];
-        var e1 = vxids[e[1]];
-        if (e0 == undefined) {
-          e0 = vxs.length;
-          vxids[e[0]] = e0;
-          vxs.push(e[0]);
-        }
-        if (e1 == undefined) {
-          e1 = vxs.length;
-          vxids[e[1]] = e1;
-          vxs.push(e[1]);
-        }
-        adj[e0] = adj[e0] || [];
-        adj[e0].push(e1);
-        adj[e1] = adj[e1] || [];
-        adj[e1].push(e0);
-        this.edges.push([e0, e1, e.left, e.right]);
-        tris[e0] = tris[e0] || [];
-        if (!tris[e0].includes(e.left)) {
-          tris[e0].push(e.left);
-        }
-        if (e.right && !tris[e0].includes(e.right)) {
-          tris[e0].push(e.right);
-        }
-        tris[e1] = tris[e1] || [];
-        if (!tris[e1].includes(e.left)) {
-          tris[e1].push(e.left);
-        }
-        if (e.right && !tris[e1].includes(e.right)) {
-          tris[e1].push(e.right);
-        }
-      }
-      var mesh = {
-        vor: vor,
-        vxs: vxs,
-        adj: adj,
-        tris: tris,
-        extent: extent
-      };
-      mesh.map = function(f) {
-        var mapped = vxs.map(f);
-        mapped.mesh = mesh;
-        return mapped;
-      };
-      //console.log(mesh);
-      this.mesh = mesh;
-      return mesh;
-    };
-*/
-    this.getCellMesh=function(){
-	  return voronoi.cellMesh;
+    /*
+        this.makeMesh = function(pts, extent) {
+          //extent = extent || defaultExtent;
+          var vor = voronoi(pts, extent);
+          var vxs = [];
+          var vxids = {};
+          var adj = [];
+          this.edges = [];
+          var tris = [];
+          for (var i = 0; i < vor.edges.length; i++) {
+            var e = vor.edges[i];
+            if (e == undefined) {
+              continue;
+            }
+            var e0 = vxids[e[0]];
+            var e1 = vxids[e[1]];
+            if (e0 == undefined) {
+              e0 = vxs.length;
+              vxids[e[0]] = e0;
+              vxs.push(e[0]);
+            }
+            if (e1 == undefined) {
+              e1 = vxs.length;
+              vxids[e[1]] = e1;
+              vxs.push(e[1]);
+            }
+            adj[e0] = adj[e0] || [];
+            adj[e0].push(e1);
+            adj[e1] = adj[e1] || [];
+            adj[e1].push(e0);
+            this.edges.push([e0, e1, e.left, e.right]);
+            tris[e0] = tris[e0] || [];
+            if (!tris[e0].includes(e.left)) {
+              tris[e0].push(e.left);
+            }
+            if (e.right && !tris[e0].includes(e.right)) {
+              tris[e0].push(e.right);
+            }
+            tris[e1] = tris[e1] || [];
+            if (!tris[e1].includes(e.left)) {
+              tris[e1].push(e.left);
+            }
+            if (e.right && !tris[e1].includes(e.right)) {
+              tris[e1].push(e.right);
+            }
+          }
+          var mesh = {
+            vor: vor,
+            vxs: vxs,
+            adj: adj,
+            tris: tris,
+            extent: extent
+          };
+          mesh.map = function(f) {
+            var mapped = vxs.map(f);
+            mapped.mesh = mesh;
+            return mapped;
+          };
+          //console.log(mesh);
+          this.mesh = mesh;
+          return mesh;
+        };
+    */
+    this.getCellMesh = function() {
+      return voronoi.cellMesh;
     };
     /**
     return the raw data of polygon vertice locations
     */
-    this.getCenters=function(){
-	  return delaunay.centers;
+    this.getCenters = function() {
+      return delaunay.centers;
     };
-    this.getEdges=function(){
-	  return edges;
+    this.getEdges = function() {
+      return edges;
     };
-
-    this.getHeightMap=function(){
-	  return points;
+    this.getHeightMap = function() {
+      return points;
     };
-
     this.copy = function(src) {
       //make a deep copy
       points = JSON.parse(JSON.stringify(src.getHeightMap()));
       update();
       //this.zeroHeightMap();
     };
-
     this.generatePointsFlat = function(n) {
       var n = n || 256;
       points = [];
       for (var i = 0; i < n; i++) {
         points.push([(srand() - .5) * this.extent.width,
-                          (srand() - .5) * this.extent.height]);
+          (srand() - .5) * this.extent.height
+        ]);
       }
     };
 
     function randomPoint() {
       var lat = Math.acos(srand() * 2 - 1) / Math.PI * 180 - 90;
       var lon = srand() * 360 - 180;
-      return [lon, lat,1e-9];
+      return [lon, lat, 1e-9];
     }
-
     this.generatePoints = function(n) {
-	  //var SEED = Math.round(Math.random()*1000);
+      //var SEED = Math.round(Math.random()*1000);
       //console.log(SEED);
       srand = new Math.seedrandom(SEED);
       var n = n || POINT_COUNT;
@@ -273,9 +260,6 @@ r radians, 2 pi radians is 360 degrees
       }
       update();
     };
-
-    
-
     this.improvePointsFlat = function(n) {
       var n = n || 1;
       for (var i = 0; i < n; i++) {
@@ -286,7 +270,7 @@ r radians, 2 pi radians is 360 degrees
       var n = n || 2;
       for (var i = 0; i < n; i++) {
         var a = d3.geoVoronoi(points).polygons().features.map(centroidSphere);
-        points = a.map(_=>[_[0],_[1],0]);
+        points = a.map(_ => [_[0], _[1], 0]);
       }
       update();
     };
@@ -321,7 +305,6 @@ r radians, 2 pi radians is 360 degrees
 function runif(lo, hi) {
   return lo + Math.random() * (hi - lo);
 }
-
 var rnorm = (function() {
   var z2 = null;
 
@@ -349,7 +332,6 @@ var rnorm = (function() {
 function randomVector(scale) {
   return [scale * rnorm(), scale * rnorm()];
 }
-
 
 function isedge(mesh, i) {
   return (mesh.adj[i].length < 3);
@@ -552,16 +534,13 @@ function trislope(h, i) {
   var p0 = h.mesh.vxs[nbs[0]];
   var p1 = h.mesh.vxs[nbs[1]];
   var p2 = h.mesh.vxs[nbs[2]];
-
   var x1 = p1[0] - p0[0];
   var x2 = p2[0] - p0[0];
   var y1 = p1[1] - p0[1];
   var y2 = p2[1] - p0[1];
-
   var det = x1 * y2 - x2 * y1;
   var h1 = h[nbs[1]] - h[nbs[0]];
   var h2 = h[nbs[2]] - h[nbs[0]];
-
   return [(y2 * h1 - y1 * h2) / det,
     (-x2 * h1 + x1 * h2) / det
   ];
@@ -597,7 +576,6 @@ function placeCities(render) {
     placeCity(render);
   }
 }
-
 
 function getRivers(h, limit) {
   var dh = downhill(h);
@@ -719,7 +697,6 @@ function visualizeCities(svg, render) {
   var cities = render.cities;
   var h = render.h;
   var n = render.params.nterrs;
-
   var circs = svg.selectAll('circle.city').data(cities);
   circs.enter()
     .append('circle')
@@ -810,7 +787,6 @@ function drawLabels(svg, render) {
         pen += 100;
       }
     }
-
     for (var i = 0; i < cities.length; i++) {
       var c = h.mesh.vxs[cities[i]];
       if (label.x0 < c[0] && label.x1 > c[0] && label.y0 < c[1] && label.y1 > c[1]) {
@@ -905,7 +881,6 @@ function drawLabels(svg, render) {
       return d.text
     })
     .raise();
-
   var reglabels = [];
   for (var i = 0; i < nterrs; i++) {
     var city = cities[i];
@@ -983,7 +958,6 @@ function drawLabels(svg, render) {
       return d.text
     })
     .raise();
-
 }
 
 function drawMap(svg, render) {

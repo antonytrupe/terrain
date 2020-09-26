@@ -8,77 +8,66 @@ class TerrainUI {
     this.canvas = canvas;
     this.terrain = new Terrain(this.extent);
     var projection;
-
-    this.addZoomPan=function(){
-       d3.geoZoom()
-          .northUp(true)
-          .projection(getProjection())
-          .onMove(visualizeHeightmap)
+    this.addZoomPan = function() {
+      d3.geoZoom()
+        .northUp(true)
+        .projection(getProjection())
+        .onMove(visualizeHeightmap)
         (canvas);
     };
-
-    this.addHandlers=function(){
+    this.addHandlers = function() {
       d3.select(canvas).on("click", function(e) {
-	    //console.log(this);
-	    //console.log(e);
+        //console.log(this);
+        //console.log(e);
         //console.log(projection.invert([e.offsetX,e.offsetY]));
-        var ll=projection.invert([e.offsetX,e.offsetY])
-        var width=(1*Math.PI)*(3/8);
-
-
-var w=document.getElementById('width').value;
-var height=document.getElementById('height').value;
-
-        $this.terrain.mountain({'center':ll,'width':w,'height':height})
+        var ll = projection.invert([e.offsetX, e.offsetY])
+        var width = (1 * Math.PI) * (3 / 8);
+        var w = document.getElementById('width').value;
+        var height = document.getElementById('height').value;
+        $this.terrain.mountain({
+          'center': ll,
+          'width': w,
+          'height': height
+        })
         visualizeHeightmap();
       });
     };
-
     this.generateAndVisualizePointsFlat = function() {
       this.terrain.generatePointsFlat();
       clear();
       this.visualizePointsFlat();
     };
-
-    this.resetViewAndVisualizeHeightmap=function(){
+    this.resetViewAndVisualizeHeightmap = function() {
       resetView();
       visualizeHeightmap();
-     };
-
-   
-
-    this.resetViewAndVisualizeTerrain=function(){
+    };
+    this.resetViewAndVisualizeTerrain = function() {
       resetView();
       visualizeTerrain();
-     };
-
-    this.setSeaLevelToMedianAndVisualizeHeightmap=function(){
-	  clear();
+    };
+    this.setSeaLevelToMedianAndVisualizeHeightmap = function() {
+      clear();
       this.terrain.setSeaLevel(.5);
       visualizeHeightmap();
       //this.visualizeCoast();
     };
-
-    this.normalizeAndVisualizeHeightmap=function(){
+    this.normalizeAndVisualizeHeightmap = function() {
       clear();
       this.terrain.normalize();
       visualizeHeightmap();
       //this.visualizeCoast();
     };
-
     this.generateAndVisualizePoints = function() {
       this.terrain.generatePoints();
       clear();
       this.visualizeOriginalPoints();
     };
-
     this.generateAndVisualizePointsAndBorder = function() {
       this.terrain.generatePoints();
       clear();
       visualizeBorder()
       this.visualizeOriginalPoints();
     };
-
     this.improveAndVisualizeMesh = function() {
       this.terrain.improvePointsFlat();
       this.terrain.makeMesh();
@@ -96,14 +85,12 @@ var height=document.getElementById('height').value;
       clear();
       visualizeHeightmap();
     };
-
     this.generateAndVisualizeMesh = function() {
       this.terrain.generatePointsFlat();
       //this.terrain.makeMesh();
       clear();
       this.visualizeVoronoi();
     };
-
     this.generateAndVisualizeVoronoi = function() {
       this.terrain.generatePoints();
       //this.terrain.makeMeshSphere();
@@ -122,19 +109,16 @@ var height=document.getElementById('height').value;
       clear();
       this.visualizeMesh();
     };
-
     this.copyAndVisualizeTerrain = function(src) {
       this.terrain.copy(src.terrain);
       clear();
       visualizeTerrain();
     };
-
     this.copyAndVisualizeHeightmap = function(src) {
       this.terrain.copy(src.terrain);
       clear();
       visualizeHeightmap();
     };
-   
     this.improveAndVisualizePointsFlat = function() {
       this.terrain.improvePointsFlat();
       clear();
@@ -156,28 +140,25 @@ var height=document.getElementById('height').value;
       clear();
       this.visualizeTriangles();
     };
-
     this.generateAndVisualizeTriangles = function() {
       this.terrain.generateGoodPoints();
       clear();
       this.visualizeTriangles();
     };
-
     this.generateAndVisualizeHeightmap = function() {
       this.terrain.generateGoodPoints();
       clear();
       visualizeHeightmap();
     };
-
-    this.generateAndVisualizeTerrain=function(){
-	  this.terrain.generateGoodPoints();
-      this.terrain.mountains(10,(1*Math.PI)*(3/8));
-      this.terrain.mountains(15,.2);
+    this.generateAndVisualizeTerrain = function() {
+      this.terrain.generateGoodPoints();
+      this.terrain.mountains(10, (1 * Math.PI) * (3 / 8));
+      this.terrain.mountains(15, .2);
       this.terrain.setSeaLevel(.5);
       this.terrain.normalize();
       clear();
       visualizeTerrain();
-};
+    };
 
     function clear() {
       var ctx = $this.canvas.getContext("2d");
@@ -189,25 +170,24 @@ var height=document.getElementById('height').value;
       // Restore the transform
       ctx.restore();
     };
-
     this.visualizePointsFlat = function() {
       var ctx = this.canvas.getContext("2d");
       this.terrain.getPoints().forEach(function(p) {
         ctx.beginPath();
         ctx.arc((p[0] + .5) * $this.canvas.width, //center x
-                (p[1] + .5) * $this.canvas.width, //center y
-                2, //radius
-                0,//start angle
-                Math.PI * 2//end angle
-                );
+          (p[1] + .5) * $this.canvas.width, //center y
+          2, //radius
+          0, //start angle
+          Math.PI * 2 //end angle
+        );
         ctx.stroke();
         ctx.fill();
         ctx.closePath();
       });
     };
 
-    function visualizeGeoJson(geojson){
-	  var projection = getProjection();
+    function visualizeGeoJson(geojson) {
+      var projection = getProjection();
       var ctx = $this.canvas.getContext("2d");
       var path = d3.geoPath().projection(projection).context(ctx);
       ctx.beginPath();
@@ -215,49 +195,45 @@ var height=document.getElementById('height').value;
       ctx.stroke();
     }
 
-    function visualizeGeoJsonFill(geojson){
-	  var projection = getProjection();
+    function visualizeGeoJsonFill(geojson) {
+      var projection = getProjection();
       var ctx = $this.canvas.getContext("2d");
       var path = d3.geoPath().projection(projection).context(ctx);
       ctx.beginPath();
       path(geojson);
       //ctx.fillStyle = "#FF0000";
       ctx.fill();
-//      ctx.stroke();
+      //      ctx.stroke();
     }
-
-    this.visualizeVoronoiEdges=function(){
-    //todo 3
+    this.visualizeVoronoiEdges = function() {
+      //todo 3
       //clear();
       //visualizeBorder();
-      visualizeEdges(this.terrain.getEdges(),this.terrain.getCenters());
+      visualizeEdges(this.terrain.getEdges(), this.terrain.getCenters());
     };
 
-    function visualizeTerrain(){
+    function visualizeTerrain() {
       visualizeHeightmap();
     }
 
-    function getVisiblePoints(){
-	  var width = $this.canvas.width,
+    function getVisiblePoints() {
+      var width = $this.canvas.width,
         height = $this.canvas.height;
-
-      var visiblePoints=$this.terrain.getHeightMap().filter(l=>{
-        var px=projection(l);
-        var visible= 0 < px[0] && px[0] < width && 0 < px[1] && px[1] < height;
+      var visiblePoints = $this.terrain.getHeightMap().filter(l => {
+        var px = projection(l);
+        var visible = 0 < px[0] && px[0] < width && 0 < px[1] && px[1] < height;
         return visible;
       });
       return visiblePoints;
     }
-
-/**
-clear, border, height intervals
- */
-    function visualizeHeightmap(){
+    /**
+    clear, border, height intervals
+     */
+    function visualizeHeightmap() {
       clear();
-
       //water base
       var projection = getProjection();
-	  var ctx = $this.canvas.getContext("2d");
+      var ctx = $this.canvas.getContext("2d");
       var path = d3.geoPath().projection(projection).context(ctx);
       var border = {
         'type': 'Sphere'
@@ -266,29 +242,23 @@ clear, border, height intervals
       path(border);
       ctx.fillStyle = d3.interpolateViridis(-1);
       ctx.fill();
-
       // make steps relative to current extent
-      var visiblePoints=getVisiblePoints();
-      var h=visiblePoints.map(p=>p[2])
+      var visiblePoints = getVisiblePoints();
+      var h = visiblePoints.map(p => p[2])
       var lo = d3.min(h);
       var hi = d3.max(h);
       //contours
-      for(var i=lo;i<hi;i+=(hi-lo)/10)
-      {
-	    ctx.fillStyle = d3.interpolateViridis(i);
-	    visualizeGeoJsonFill(d3.geoContour().contour($this.terrain.getHeightMap(),i));
+      for (var i = lo; i < hi; i += (hi - lo) / 10) {
+        ctx.fillStyle = d3.interpolateViridis(i);
+        visualizeGeoJsonFill(d3.geoContour().contour($this.terrain.getHeightMap(), i));
       }
-
       //coast
-      var contour=d3.geoContour().contour($this.terrain.getHeightMap(),.5);
-      ctx.lineWidth=2;
+      var contour = d3.geoContour().contour($this.terrain.getHeightMap(), .5);
+      ctx.lineWidth = 2;
       visualizeGeoJson(contour);
-
       visualizeBorder();
-
       //equator
       visualizeEquator();
-
       //TODO scale
       const scaleBar = d3.geoScaleBar()
         .projection(projection)
@@ -296,43 +266,44 @@ clear, border, height intervals
       d3.select($this.canvas).call(scaleBar);
     }
 
-    function visualizeEdges(edges,points){
-	  var geojson={'type':'MultiLineString','coordinates':[]};
-	  for (var f in edges) {
+    function visualizeEdges(edges, points) {
+      var geojson = {
+        'type': 'MultiLineString',
+        'coordinates': []
+      };
+      for (var f in edges) {
         var edge = edges[f];
-	    var start = points[edge[0]];
+        var start = points[edge[0]];
         var stop = points[edge[1]];
-        geojson.coordinates.push([start,stop]);
+        geojson.coordinates.push([start, stop]);
       }
       visualizeGeoJson(geojson);
     }
     /**
     the vertices of the voronoi polygons, terrain.centers
     */
-    this.visualizeVoronoiPoints=function(){
+    this.visualizeVoronoiPoints = function() {
       //clear();
       //visualizeBorder();
       visualizePoints(this.terrain.getCenters());
     };
 
-    function visualizePoints(points){
+    function visualizePoints(points) {
       visualizeGeoJson({
         'type': 'MultiPoint',
         'coordinates': points
       });
     }
-
     this.visualizeOriginalPoints = function() {
-	  //clear();
+      //clear();
       //visualizeBorder();
       visualizeGeoJson({
         'type': 'MultiPoint',
         'coordinates': this.terrain.getPoints()
       });
     };
-
     this.visualizePoints2 = function() {
-      var projection =getProjection();
+      var projection = getProjection();
       //get the function that generates the d attribute from svg's line function, not directly usable for canvas
       var ctx = this.canvas.getContext("2d");
       var path = d3.geoPath().projection(projection).context(ctx);
@@ -344,7 +315,6 @@ clear, border, height intervals
       path(randomPoint);
       ctx.stroke();
     };
-
     this.visualizeTriangles = function() {
       var projection = getProjection();
       //get the function that generates the d attribute from svg's line function, not directly usable for canvas
@@ -357,70 +327,76 @@ clear, border, height intervals
       path(d3.geoVoronoi().triangles(this.terrain.getPoints()));
       ctx.stroke();
     };
-
-/**
-clear, borders coast */
-    this.visualizeCoast=function(){
-	  //console.log('visualizeCoast');
+    /**
+    clear, borders coast */
+    this.visualizeCoast = function() {
+      //console.log('visualizeCoast');
       clear();
       visualizeBorder();
       //visualizeGraticuls();
-      var contour=d3.geoContour().contour($this.terrain.getHeightMap(),.5);
+      var contour = d3.geoContour().contour($this.terrain.getHeightMap(), .5);
       visualizeGeoJson(contour);
     };
-
-/**
-clear, border, coast, height intervals
- */
+    /**
+    clear, border, coast, height intervals
+     */
     this.addContinentAndVisualizeHeightmap = function(count) {
-      this.terrain.mountains(count,(1*Math.PI)*(3/8));
+      this.terrain.mountains(count, (1 * Math.PI) * (3 / 8));
       clear();
       visualizeHeightmap();
       //visualizeSeaLevel();
     };
-
     this.addIslandAndVisualizeHeightmap = function(count) {
-      this.terrain.mountains(count,.2);
+      this.terrain.mountains(count, .2);
       clear();
       visualizeHeightmap();
       //visualizeSeaLevel();
     };
 
-    function getProjection(){
+    function getProjection() {
       var width = $this.canvas.width,
         height = $this.canvas.height;
-      if(typeof projection=="undefined")
-      {
+      if (typeof projection == "undefined") {
         //console.log('new projection');
         //set projection type here
-//geoOrthographic
-//geoWinkel3
+        //geoOrthographic
+        //geoWinkel3
         projection = d3.geoWinkel3()
           //.scale(width / 5.2)
           //.translate([width / 2, height / 2])
           //.rotate([0,0,0])
-          .fitExtent([[6, 6], [width-6, height-6]],  {'type': 'Sphere'});
+          .fitExtent([
+            [6, 6],
+            [width - 6, height - 6]
+          ], {
+            'type': 'Sphere'
+          });
       }
       //console.log(projection.scale());
       return projection;
     }
-
-    this.resetToFlat=function(){
-      this.terrain.getHeightMap().map(p=>{p[2]=0;});
+    this.resetToFlat = function() {
+      this.terrain.getHeightMap().map(p => {
+        p[2] = 0;
+      });
       visualizeHeightmap();
     };
 
-     function resetView(){
-	  var width = $this.canvas.width,
+    function resetView() {
+      var width = $this.canvas.width,
         height = $this.canvas.height;
       projection
         //.scale(width / 5.2)
         //.translate([width / 2, height / 2])
-        .rotate([0,0,0])
-        .fitExtent([[6, 6], [width-6, height-6]],  {'type': 'Sphere'});
+        .rotate([0, 0, 0])
+        .fitExtent([
+          [6, 6],
+          [width - 6, height - 6]
+        ], {
+          'type': 'Sphere'
+        });
       //console.log(projection.scale());
     }
-
     /**draw  short strokes to indicate slopes, make it look like a cartographers map*/
     function visualizeSlopes(svg, render) {
       var h = render.h;
@@ -442,50 +418,50 @@ clear, border, coast, height intervals
         if (Math.abs(s) < runif(0.1, 0.4)) continue;
         var l = r * runif(1, 2) * (1 - 0.2 * Math.pow(Math.atan(s), 2)) * Math.exp(s2 / 100);
         var x = h.mesh.vxs[i][0];
-    var y = h.mesh.vxs[i][1];
-    if (Math.abs(l * s) > 2 * r) {
-      var n = Math.floor(Math.abs(l * s / r));
-      l /= n;
-      if (n > 4) n = 4;
-      for (var j = 0; j < n; j++) {
-        var u = rnorm() * r;
-        var v = rnorm() * r;
-        strokes.push([
-          [x + u - l, y + v + l * s],
-          [x + u + l, y + v - l * s]
-        ]);
+        var y = h.mesh.vxs[i][1];
+        if (Math.abs(l * s) > 2 * r) {
+          var n = Math.floor(Math.abs(l * s / r));
+          l /= n;
+          if (n > 4) n = 4;
+          for (var j = 0; j < n; j++) {
+            var u = rnorm() * r;
+            var v = rnorm() * r;
+            strokes.push([
+              [x + u - l, y + v + l * s],
+              [x + u + l, y + v - l * s]
+            ]);
+          }
+        } else {
+          strokes.push([
+            [x - l, y + l * s],
+            [x + l, y - l * s]
+          ]);
+        }
       }
-    } else {
-      strokes.push([
-        [x - l, y + l * s],
-        [x + l, y - l * s]
-      ]);
+      var lines = svg.selectAll('line.slope').data(strokes)
+      lines.enter()
+        .append('line')
+        .classed('slope', true);
+      lines.exit()
+        .remove();
+      svg.selectAll('line.slope')
+        .attr('x1', function(d) {
+          return 1000 * d[0][0]
+        })
+        .attr('y1', function(d) {
+          return 1000 * d[0][1]
+        })
+        .attr('x2', function(d) {
+          return 1000 * d[1][0]
+        })
+        .attr('y2', function(d) {
+          return 1000 * d[1][1]
+        })
     }
-  }
-  var lines = svg.selectAll('line.slope').data(strokes)
-  lines.enter()
-    .append('line')
-    .classed('slope', true);
-  lines.exit()
-    .remove();
-  svg.selectAll('line.slope')
-    .attr('x1', function(d) {
-      return 1000 * d[0][0]
-    })
-    .attr('y1', function(d) {
-      return 1000 * d[0][1]
-    })
-    .attr('x2', function(d) {
-      return 1000 * d[1][0]
-    })
-    .attr('y2', function(d) {
-      return 1000 * d[1][1]
-    })
-}
 
-    function visualizeBorder(){
+    function visualizeBorder() {
       var projection = getProjection();
-	  var ctx = $this.canvas.getContext("2d");
+      var ctx = $this.canvas.getContext("2d");
       var path = d3.geoPath().projection(projection).context(ctx);
       var border = {
         'type': 'Sphere'
@@ -495,37 +471,34 @@ clear, border, coast, height intervals
       ctx.strokeStyle = "#000";
       ctx.stroke();
     }
-
     /**
     add lat/lon lines
     */
-    function visualizeGraticuls(){
-      var projection = getProjection();
-      var ctx = $this.canvas.getContext("2d");
-      var path = d3.geoPath().projection(projection).context(ctx);
-       var graticule = d3.geoGraticule()
-           .step([30, 30]);
-      ctx.beginPath();
-      path(graticule());
-      ctx.strokeStyle = "#000";
-      ctx.stroke();
-    }
-
-    /**
-    add equator
-    */
-    function visualizeEquator(){
+    function visualizeGraticuls() {
       var projection = getProjection();
       var ctx = $this.canvas.getContext("2d");
       var path = d3.geoPath().projection(projection).context(ctx);
       var graticule = d3.geoGraticule()
-           .step([0, 90]);
+        .step([30, 30]);
       ctx.beginPath();
       path(graticule());
       ctx.strokeStyle = "#000";
       ctx.stroke();
     }
-
+    /**
+    add equator
+    */
+    function visualizeEquator() {
+      var projection = getProjection();
+      var ctx = $this.canvas.getContext("2d");
+      var path = d3.geoPath().projection(projection).context(ctx);
+      var graticule = d3.geoGraticule()
+        .step([0, 90]);
+      ctx.beginPath();
+      path(graticule());
+      ctx.strokeStyle = "#000";
+      ctx.stroke();
+    }
     this.visualizeMesh = function() {
       //var projection = getProjection();
       //get the function that generates the d attribute from svg's line function, not directly usable for canvas
@@ -535,7 +508,6 @@ clear, border, coast, height intervals
       visualizeBorder();
       visualizeGeoJson(this.terrain.getCellMesh());
     };
-
     this.visualizeTrianglesAndMeshSphere = function() {
       var projection = getProjection()
       //get the function that generates the d attribute from svg's line function, not directly usable for canvas
@@ -543,15 +515,12 @@ clear, border, coast, height intervals
       var path = d3.geoPath().projection(projection).context(ctx);
       clear();
       visualizeBorder();
-      
       //console.log(this.terrain.cellMesh);
-
       ctx.beginPath();
-      path(this.terrain.voronoi.cellMesh);  
+      path(this.terrain.voronoi.cellMesh);
       ctx.strokeStyle = "#00F";
       ctx.stroke();
     };
-
-    this.visualizeVoronoi =this.visualizeMesh;
+    this.visualizeVoronoi = this.visualizeMesh;
   }
 }
