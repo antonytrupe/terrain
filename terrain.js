@@ -6,14 +6,14 @@ const DEFAULT_EXTENT = {
 
 class Terrain {
   constructor(extent) {
-	const POINT_COUNT=512;
-	const SEED = 2323;
+    const POINT_COUNT=1024;
+    const SEED = 996;
+    var srand = new Math.seedrandom(SEED);
     var $this = this;
     this.extent = extent || DEFAULT_EXTENT;
     /**[[lat,lon,height]] */
     var points = [];
     var edges = [];
-    var srand = new Math.seedrandom(SEED);
     var delaunay={};
     var voronoi={};
 
@@ -58,15 +58,7 @@ class Terrain {
       edges.sort((a, b) => a[0]!= b[0]?a[0]-b[0]:a[1]-b[1]);
     }
 
-    function neighbours(i) {
-	  console.log(i);
-      var onbs = delaunay.neighbors[i];
-      var nbs = [];
-      for (var i = 0; i < onbs.length; i++) {
-        nbs.push(onbs[i]);
-      }
-      return nbs;
-    }
+ 
     
     this.normalize=function() {
       var h=points.map(p=>p[2])
@@ -111,6 +103,30 @@ class Terrain {
       }
     };
 
+    this.mountain=function({center,height,width}){
+      //console.log(center);
+      center=center||randomPoint();
+      height=height||1;
+      width=width||(1*Math.PI)*(1/8);
+	  //console.log(center);
+	  //console.log(height);
+	  console.log(width);
+
+
+      var newvals = []
+      newvals.length = points.length;
+      newvals.fill(0);
+      for (var i = 0; i < points.length; i++) {
+        var p = points[i];
+        //distance in radians
+        var dr = d3.geoDistance(p, center);
+        if (dr < width) {
+          newvals[i] += (Math.cos(Math.PI * dr/width) + 1) * (height/2);
+        }
+      }
+      add(newvals);
+    };
+
 /** n number of mountains
 r radians, 2 pi radians is 360 degrees
  */
@@ -125,10 +141,11 @@ r radians, 2 pi radians is 360 degrees
       var newvals = []
       newvals.length = points.length;
       newvals.fill(0);
-      for (var i = 0; i < points.length; i++) {
-        var p = points[i];
-        for (var j = 0; j < n; j++) {
-          var m = mounts[j];
+      for (var j = 0; j < n; j++) {
+        var m = mounts[j];
+        for (var i = 0; i < points.length; i++) {
+          var p = points[i];
+        
           //var pp = [(p[0] + 90) / 180, (p[1] + 180) / 360];
           //var mm = [(m[0] + 90) / 180, (m[1] + 180) / 360];
           //need to normalize points from [-90|90,-180|180] to [0|1,0|1]
@@ -246,6 +263,8 @@ r radians, 2 pi radians is 360 degrees
     }
 
     this.generatePoints = function(n) {
+	  //var SEED = Math.round(Math.random()*1000);
+      //console.log(SEED);
       srand = new Math.seedrandom(SEED);
       var n = n || POINT_COUNT;
       points = [];
@@ -255,56 +274,7 @@ r radians, 2 pi radians is 360 degrees
       update();
     };
 
-    function generateEdgeNeighbors() {
-      console.log(edges);
-      var foo = d3.geoDelaunay(points).neighbors;
-      var vxs = [];
-      var vxids = {};
-      var adj = [];
-      var edges = [];
-      var tris = [];
-      for (var i = 0; i < $this.voronoiEdges.length; i++) {
-        var e = $this.voronoiEdges[i];
-        if (e == undefined) {
-          continue;
-        }
-        var e0 = vxids[e[0]];
-        var e1 = vxids[e[1]];
-        if (e0 == undefined) {
-          e0 = vxs.length;
-          vxids[e[0]] = e0;
-          vxs.push(e[0]);
-        }
-        if (e1 == undefined) {
-          e1 = vxs.length;
-          vxids[e[1]] = e1;
-          vxs.push(e[1]);
-        }
-        adj[e0] = adj[e0] || [];
-        adj[e0].push(e1);
-        adj[e1] = adj[e1] || [];
-        adj[e1].push(e0);
-        edges.push([e0, e1, e.left, e.right]);
-        tris[e0] = tris[e0] || [];
-        if (!tris[e0].includes(e.left)) {
-          tris[e0].push(e.left);
-        }
-        if (e.right && !tris[e0].includes(e.right)) {
-          tris[e0].push(e.right);
-        }
-        tris[e1] = tris[e1] || [];
-        if (!tris[e1].includes(e.left)) {
-          tris[e1].push(e.left);
-        }
-        if (e.right && !tris[e1].includes(e.right)) {
-          tris[e1].push(e.right);
-        }
-      }
-      console.log(adj);
-      //console.log(edges);
-      //console.log(edges);
-      $this.neighbors = adj;
-    }
+    
 
     this.improvePointsFlat = function(n) {
       var n = n || 1;
@@ -324,11 +294,6 @@ r radians, 2 pi radians is 360 degrees
     function centroidSphere(a) {
       var c = d3.geoCentroid(a);
       return c;
-    }
-
-    function voronoiSphere() {
-      var a = d3.geoVoronoi();
-      return a;
     }
 
     function voronoi() {
@@ -743,73 +708,6 @@ function relaxPath(path) {
 function visualizeDownhill(h) {
   var links = getRivers(h, 0.01);
   drawPaths('river', links);
-}
-
-function visualizeSlopes(svg, render) {
-  var h = render.h;
-  var strokes = [];
-  var r = 0.25 / Math.sqrt(h.length);
-  for (var i = 0; i < h.length; i++) {
-    if (h[i] <= 0 || isnearedge(h.mesh, i)) continue;
-    var nbs = neighbours(h.mesh, i);
-    nbs.push(i);
-    var s = 0;
-    var s2 = 0;
-    for (var j = 0; j < nbs.length; j++) {
-      var slopes = trislope(h, nbs[j]);
-      s += slopes[0] / 10;
-      s2 += slopes[1];
-    }
-    s /= nbs.length;
-    s2 /= nbs.length;
-    if (Math.abs(s) < runif(0.1, 0.4)) continue;
-    var l = r * runif(1, 2) * (1 - 0.2 * Math.pow(Math.atan(s), 2)) * Math.exp(s2 / 100);
-    var x = h.mesh.vxs[i][0];
-    var y = h.mesh.vxs[i][1];
-    if (Math.abs(l * s) > 2 * r) {
-      var n = Math.floor(Math.abs(l * s / r));
-      l /= n;
-      if (n > 4) n = 4;
-      for (var j = 0; j < n; j++) {
-        var u = rnorm() * r;
-        var v = rnorm() * r;
-        strokes.push([
-          [x + u - l, y + v + l * s],
-          [x + u + l, y + v - l * s]
-        ]);
-      }
-    } else {
-      strokes.push([
-        [x - l, y + l * s],
-        [x + l, y - l * s]
-      ]);
-    }
-  }
-  var lines = svg.selectAll('line.slope').data(strokes)
-  lines.enter()
-    .append('line')
-    .classed('slope', true);
-  lines.exit()
-    .remove();
-  svg.selectAll('line.slope')
-    .attr('x1', function(d) {
-      return 1000 * d[0][0]
-    })
-    .attr('y1', function(d) {
-      return 1000 * d[0][1]
-    })
-    .attr('x2', function(d) {
-      return 1000 * d[1][0]
-    })
-    .attr('y2', function(d) {
-      return 1000 * d[1][1]
-    })
-}
-
-function visualizeContour(h, level) {
-  level = level || 0;
-  var links = contour(h, level);
-  drawPaths('coast', links);
 }
 
 function visualizeBorders(h, cities, n) {

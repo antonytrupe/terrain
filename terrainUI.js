@@ -14,8 +14,24 @@ class TerrainUI {
           .northUp(true)
           .projection(getProjection())
           .onMove(visualizeHeightmap)
-          
         (canvas);
+    };
+
+    this.addHandlers=function(){
+      d3.select(canvas).on("click", function(e) {
+	    //console.log(this);
+	    //console.log(e);
+        //console.log(projection.invert([e.offsetX,e.offsetY]));
+        var ll=projection.invert([e.offsetX,e.offsetY])
+        var width=(1*Math.PI)*(3/8);
+
+
+var w=document.getElementById('width').value;
+var height=document.getElementById('height').value;
+
+        $this.terrain.mountain({'center':ll,'width':w,'height':height})
+        visualizeHeightmap();
+      });
     };
 
     this.generateAndVisualizePointsFlat = function() {
@@ -25,16 +41,15 @@ class TerrainUI {
     };
 
     this.resetViewAndVisualizeHeightmap=function(){
-	//TODO
-      var width = $this.canvas.width,
-        height = $this.canvas.height;
-       projection
-        .scale(width / 5.2)
-        .translate([width / 2, height / 2])
-        .rotate([0,0,0])
-        //.precision(1)
-;
+      resetView();
       visualizeHeightmap();
+     };
+
+   
+
+    this.resetViewAndVisualizeTerrain=function(){
+      resetView();
+      visualizeTerrain();
      };
 
     this.setSeaLevelToMedianAndVisualizeHeightmap=function(){
@@ -107,6 +122,13 @@ class TerrainUI {
       clear();
       this.visualizeMesh();
     };
+
+    this.copyAndVisualizeTerrain = function(src) {
+      this.terrain.copy(src.terrain);
+      clear();
+      visualizeTerrain();
+    };
+
     this.copyAndVisualizeHeightmap = function(src) {
       this.terrain.copy(src.terrain);
       clear();
@@ -146,6 +168,16 @@ class TerrainUI {
       clear();
       visualizeHeightmap();
     };
+
+    this.generateAndVisualizeTerrain=function(){
+	  this.terrain.generateGoodPoints();
+      this.terrain.mountains(10,(1*Math.PI)*(3/8));
+      this.terrain.mountains(15,.2);
+      this.terrain.setSeaLevel(.5);
+      this.terrain.normalize();
+      clear();
+      visualizeTerrain();
+};
 
     function clear() {
       var ctx = $this.canvas.getContext("2d");
@@ -201,13 +233,27 @@ class TerrainUI {
       visualizeEdges(this.terrain.getEdges(),this.terrain.getCenters());
     };
 
+    function visualizeTerrain(){
+      visualizeHeightmap();
+    }
+
+    function getVisiblePoints(){
+	  var width = $this.canvas.width,
+        height = $this.canvas.height;
+
+      var visiblePoints=$this.terrain.getHeightMap().filter(l=>{
+        var px=projection(l);
+        var visible= 0 < px[0] && px[0] < width && 0 < px[1] && px[1] < height;
+        return visible;
+      });
+      return visiblePoints;
+    }
+
 /**
 clear, border, height intervals
  */
     function visualizeHeightmap(){
-	  //console.log($this.terrain);
       clear();
-      visualizeBorder();
 
       //water base
       var projection = getProjection();
@@ -221,8 +267,13 @@ clear, border, height intervals
       ctx.fillStyle = d3.interpolateViridis(-1);
       ctx.fill();
 
+      // make steps relative to current extent
+      var visiblePoints=getVisiblePoints();
+      var h=visiblePoints.map(p=>p[2])
+      var lo = d3.min(h);
+      var hi = d3.max(h);
       //contours
-      for(var i=-1;i<1;i+=.1)
+      for(var i=lo;i<hi;i+=(hi-lo)/10)
       {
 	    ctx.fillStyle = d3.interpolateViridis(i);
 	    visualizeGeoJsonFill(d3.geoContour().contour($this.terrain.getHeightMap(),i));
@@ -233,8 +284,16 @@ clear, border, height intervals
       ctx.lineWidth=2;
       visualizeGeoJson(contour);
 
+      visualizeBorder();
+
       //equator
       visualizeEquator();
+
+      //TODO scale
+      const scaleBar = d3.geoScaleBar()
+        .projection(projection)
+        .size([400, 320]);
+      d3.select($this.canvas).call(scaleBar);
     }
 
     function visualizeEdges(edges,points){
@@ -302,7 +361,7 @@ clear, border, height intervals
 /**
 clear, borders coast */
     this.visualizeCoast=function(){
-	  console.log('visualizeCoast');
+	  //console.log('visualizeCoast');
       clear();
       visualizeBorder();
       //visualizeGraticuls();
@@ -331,17 +390,98 @@ clear, border, coast, height intervals
       var width = $this.canvas.width,
         height = $this.canvas.height;
       if(typeof projection=="undefined")
-      {	
-	//geoEqualEarth
-	//geoWinkel3
-        projection=  d3.geoWinkel3()
-          .scale(width / 5.2)
-          .translate([width / 2, height / 2])
-          .rotate([0,0,0])
-          .precision(1);
+      {
+        //console.log('new projection');
+        //set projection type here
+//geoOrthographic
+//geoWinkel3
+        projection = d3.geoWinkel3()
+          //.scale(width / 5.2)
+          //.translate([width / 2, height / 2])
+          //.rotate([0,0,0])
+          .fitExtent([[6, 6], [width-6, height-6]],  {'type': 'Sphere'});
       }
+      //console.log(projection.scale());
       return projection;
     }
+
+    this.resetToFlat=function(){
+      this.terrain.getHeightMap().map(p=>{p[2]=0;});
+      visualizeHeightmap();
+    };
+
+     function resetView(){
+	  var width = $this.canvas.width,
+        height = $this.canvas.height;
+      projection
+        //.scale(width / 5.2)
+        //.translate([width / 2, height / 2])
+        .rotate([0,0,0])
+        .fitExtent([[6, 6], [width-6, height-6]],  {'type': 'Sphere'});
+      //console.log(projection.scale());
+    }
+
+    /**draw  short strokes to indicate slopes, make it look like a cartographers map*/
+    function visualizeSlopes(svg, render) {
+      var h = render.h;
+      var strokes = [];
+      var r = 0.25 / Math.sqrt(h.length);
+      for (var i = 0; i < h.length; i++) {
+        if (h[i] <= 0 || isnearedge(h.mesh, i)) continue;
+        var nbs = neighbours(h.mesh, i);
+        nbs.push(i);
+        var s = 0;
+        var s2 = 0;
+        for (var j = 0; j < nbs.length; j++) {
+          var slopes = trislope(h, nbs[j]);
+          s += slopes[0] / 10;
+          s2 += slopes[1];
+        }
+        s /= nbs.length;
+        s2 /= nbs.length;
+        if (Math.abs(s) < runif(0.1, 0.4)) continue;
+        var l = r * runif(1, 2) * (1 - 0.2 * Math.pow(Math.atan(s), 2)) * Math.exp(s2 / 100);
+        var x = h.mesh.vxs[i][0];
+    var y = h.mesh.vxs[i][1];
+    if (Math.abs(l * s) > 2 * r) {
+      var n = Math.floor(Math.abs(l * s / r));
+      l /= n;
+      if (n > 4) n = 4;
+      for (var j = 0; j < n; j++) {
+        var u = rnorm() * r;
+        var v = rnorm() * r;
+        strokes.push([
+          [x + u - l, y + v + l * s],
+          [x + u + l, y + v - l * s]
+        ]);
+      }
+    } else {
+      strokes.push([
+        [x - l, y + l * s],
+        [x + l, y - l * s]
+      ]);
+    }
+  }
+  var lines = svg.selectAll('line.slope').data(strokes)
+  lines.enter()
+    .append('line')
+    .classed('slope', true);
+  lines.exit()
+    .remove();
+  svg.selectAll('line.slope')
+    .attr('x1', function(d) {
+      return 1000 * d[0][0]
+    })
+    .attr('y1', function(d) {
+      return 1000 * d[0][1]
+    })
+    .attr('x2', function(d) {
+      return 1000 * d[1][0]
+    })
+    .attr('y2', function(d) {
+      return 1000 * d[1][1]
+    })
+}
 
     function visualizeBorder(){
       var projection = getProjection();

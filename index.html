@@ -31,7 +31,7 @@
       border: thin black solid;
       width:320px;
       height:200px;
-      display:inline-block;
+      float:left;
       }
       button{
       margin:.5em;
@@ -39,6 +39,7 @@
       font-size: large;
       border-radius: .5rem;
       background-color: white;
+      vertical-align:top;
       }
       .actions{
       display:inline-block;
@@ -55,18 +56,28 @@
     margin: 0;
     padding: 0;
     }
+input[type=range][orient=vertical]
+{
+    writing-mode: bt-lr; /* IE */
+    -webkit-appearance: slider-vertical; /* WebKit */
+    width: 8px;
+    height: 175px;
+    padding: 0 5px;
+}
     </style>
     <!-- keep track of the state of the world, but no UI logic -->
     <script src="terrain.js"></script>
     <!-- interacts with the browner to draw, has an internal terrain object -->
     <script src="terrainUI.js"></script>
+    <!--  -->
+    <script src="geopolitical.js"></script>
     <!-- comman javascript library -->
-    <script src="https://d3js.org/d3.v4.js"></script>
+    <script src="https://d3js.org/d3.v6.js"></script>
     <script src="https://d3js.org/d3-array.v1.min.js"></script>
     <!-- map projection support -->
-    <script src="https://d3js.org/d3-geo.v1.min.js"></script>
+    <script src="https://d3js.org/d3-geo.v2.min.js"></script>
     <!-- more map projection support -->
-    <script src="https://d3js.org/d3-geo-projection.v2.min.js"></script>
+    <script src="https://d3js.org/d3-geo-projection.v3.min.js"></script>
     <!-- library for computing voronoi diargrams and delaunay traingualations, prerequesite for  d3-geo-voronoi-->
     <script src="https://unpkg.com/d3-delaunay@5"></script>
     <!-- support for spherical delaunay data -->
@@ -75,6 +86,9 @@
     <script src="https://unpkg.com/d3-tricontour@0.1.0"></script>
     <!-- support for zoom and panning -->
     <script src="https://unpkg.com/d3-geo-zoom"></script>
+    <!-- for scale -->
+    <script src="https://unpkg.com/d3-geo-scale-bar@1.0.2/build/d3-geo-scale-bar.min.js"></script>
+
     <!-- psudo random number generator that is seedable, nice for being able to reproduce issues -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/seedrandom/3.0.5/seedrandom.min.js"></script>
     <!-- help to syntax highlight code thats on the screen -->
@@ -339,7 +353,7 @@ this.visualizePointsFlat = function() {
       </div>
     </div>
     
-    <!--zoom, pan-->
+    <!--zoom, pan, scale-->
     <div class="a">
       <div class="step" >
         <p>Zoom, Panning</p>
@@ -349,10 +363,98 @@ this.visualizePointsFlat = function() {
           //get the canvas
           var zoompan=new TerrainUI(document.getElementById('zoompan'));
           zoompan.addZoomPan();
+          zoompan.generateAndVisualizeTerrain();
+
         </script>
         <button onclick="zoompan.copyAndVisualizeHeightmap(transformations_coast)">Copy from Above</button>
         <button onclick="zoompan.resetViewAndVisualizeHeightmap()">Reset View</button>
       </div>
     </div>
+
+    <!--terrain-->
+    <div class="a">
+      <div class="step" >
+        <p>Terrain</p>
+        <p style="float:left;"></p>
+        <canvas id="terrain" width="320" height="200" ></canvas>
+        <script>
+          //get the canvas
+          var terrain=new TerrainUI(document.getElementById('terrain'));
+          terrain.addZoomPan();
+          terrain.generateAndVisualizeTerrain();
+        </script>
+        <button onclick="terrain.copyAndVisualizeTerrain(zoompan)">Copy from Above</button>
+        <button onclick="terrain.generateAndVisualizeTerrain()">Generate</button>
+        <button onclick="terrain.resetViewAndVisualizeTerrain()">Reset View</button>
+      </div>
+    </div>
+
+    <!--interactive terrain-->
+    <div class="a">
+      <div class="step" >
+        <p>Point and Click Terrain Modification</p>
+        <p style="float:left;"></p>
+        <canvas id="interactive" width="320" height="200" ></canvas>
+        <script>
+          //get the canvas
+          var interactive=new TerrainUI(document.getElementById('interactive'));
+          interactive.addZoomPan();
+          interactive.generateAndVisualizeHeightmap();
+          interactive.addHandlers();
+        </script>
+<div>
+        <button onclick="interactive.copyAndVisualizeTerrain(terrain)">Copy from Above</button>
+        <button onclick="interactive.resetToFlat()">Reset to flat</button>
+        <button onclick="interactive.setSeaLevelToMedianAndVisualizeHeightmap()" title="find middle point and shift everything so the middle point is now 0.5">Set sea level to median</button>
+        <button onclick="interactive.normalizeAndVisualizeHeightmap()" title="0-1">normalize heightmap</button>
+        <button onclick="interactive.resetViewAndVisualizeTerrain()">Reset View</button>
+<span>
+        <input type="range" orient="vertical" id="height" name="height" min="-1" max="1" value="1" step=".05">
+        <label for="height">Height</label>
+</span><span>
+        <input type="range" id="width" name="width" min="0" max="3.1" value="1" step=".1">
+        <label for="width">Width</label>
+</span>
+</div>
+      </div>
+    </div>
+
+    <!--Saving-->
+    <div class="a">
+      <div class="step" >
+        <p>Saving/Loading</p>
+        <p style="float:left;"></p>
+        <canvas id="save" width="320" height="200" ></canvas>
+        <script>
+          //get the canvas
+          var save=new TerrainUI(document.getElementById('save'));
+          save.addZoomPan();
+          save.generateAndVisualizeHeightmap();
+        </script>
+        <button onclick="save.copyAndVisualizeTerrain(interactive)">Copy from Above</button>
+        <button onclick="save.resetViewAndVisualizeTerrain()">Reset View</button>
+        <button onclick="save.save()">Save<input style="display:block;" /></button>
+        <button onclick="save.loadAndVisualizeTerrain()">Load<select style="display:block;"><option>1</option><option>2</option></select></button>
+      </div>
+    </div>
+
+    <!--Place populations-->
+    <div class="a">
+      <div class="step" >
+        <p>Place Populations</p>
+        <p style="float:left;"></p>
+        <canvas id="pop" width="320" height="200" ></canvas>
+        <script>
+          //get the canvas
+          var pop=new TerrainUI(document.getElementById('pop'));
+          pop.addZoomPan();
+          pop.generateAndVisualizeHeightmap();
+        </script>
+        <button onclick="pop.copyAndVisualizeTerrain(interactive)">Copy from Above</button>
+        <button onclick="interactive.resetViewAndVisualizeTerrain()">Reset View</button>
+      </div>
+    </div>
+
+
   </body>
 </html>
