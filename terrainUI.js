@@ -1,13 +1,79 @@
 "use strict";
 class TerrainUI {
-  constructor(canvas) {
+  constructor(container) {
     "use strict";
     var $this = this;
-    //this.params = params || DEFAULT_PARAMS;
-    //this.extent = this.params.extent;
-    this.canvas = canvas;
+    var container = container;
+    var canvas = container.getElementsByTagName('canvas')[0];
     this.terrain = new Terrain(this.extent);
     var projection;
+
+    this.delete=function(){
+      //delete the points value
+      var name = container.getElementsByClassName('loadSelect')[0].value;
+      window.localStorage.removeItem(name);
+      //remove the name from the list
+      var saves=getSaves();
+      var saves = saves.filter(e=> e !== name );
+      window.localStorage.setItem('terrain_saves',JSON.stringify(saves));
+      loadSavedList();
+    };
+
+    function getSaves(){
+      var n=window.localStorage.getItem('terrain_saves');
+      var saves=[];
+      if(n && n.length>0){
+        saves=saves.concat(JSON.parse(n));
+      }
+      return saves;
+    }
+
+    this.save=function(){
+      var name = container.getElementsByClassName('saveInput')[0].value;
+      if(!name)
+      {
+        return;
+      }
+	  //get the list of already saved terrains
+      var saves=getSaves();
+      if(saves.indexOf(name)==-1){
+        saves.push(name);
+      }
+      window.localStorage.setItem('terrain_saves',JSON.stringify(saves));
+      window.localStorage.setItem(name,JSON.stringify($this.terrain.getHeightMap()));
+
+      //update load list
+      loadSavedList();
+    };
+
+    function load(){
+      var name = container.querySelector('.loadSelect').selectedOptions[0].value;
+      var t=window.localStorage.getItem(name);
+      $this.terrain.setHeightMap(JSON.parse(t));
+    };
+
+    function loadSavedList(){
+      var n=window.localStorage.getItem('terrain_saves');
+      var select=container.getElementsByClassName('loadSelect');
+      if(select.length>0){
+ 
+        //clear the list
+        select[0].options.length=0;
+
+        if(n)
+        {
+          var saves=JSON.parse(n);
+          saves.forEach( e=>{
+            var opt1 = document.createElement('option');
+            opt1.value = e;
+            opt1.text = e;
+            select[0].add(opt1);
+          });
+        }
+      }
+    }
+    loadSavedList();
+
     this.addZoomPan = function() {
       d3.geoZoom()
         .northUp(true)
@@ -15,6 +81,7 @@ class TerrainUI {
         .onMove(visualizeHeightmap)
         (canvas);
     };
+
     this.addHandlers = function() {
       d3.select(canvas).on("click", function(e) {
         //console.log(this);
@@ -114,6 +181,11 @@ class TerrainUI {
       clear();
       visualizeTerrain();
     };
+    this.loadAndVisualizeTerrain=function(){
+      load();
+      clear();
+      visualizeTerrain();
+    };
     this.copyAndVisualizeHeightmap = function(src) {
       this.terrain.copy(src.terrain);
       clear();
@@ -161,12 +233,12 @@ class TerrainUI {
     };
 
     function clear() {
-      var ctx = $this.canvas.getContext("2d");
+      var ctx = canvas.getContext("2d");
       // Store the current transformation matrix
       ctx.save();
       // Use the identity matrix while clearing the canvas
       ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.clearRect(0, 0, $this.canvas.width, $this.canvas.height);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
       // Restore the transform
       ctx.restore();
     };
@@ -174,8 +246,8 @@ class TerrainUI {
       var ctx = this.canvas.getContext("2d");
       this.terrain.getPoints().forEach(function(p) {
         ctx.beginPath();
-        ctx.arc((p[0] + .5) * $this.canvas.width, //center x
-          (p[1] + .5) * $this.canvas.width, //center y
+        ctx.arc((p[0] + .5) * canvas.width, //center x
+          (p[1] + .5) * canvas.width, //center y
           2, //radius
           0, //start angle
           Math.PI * 2 //end angle
@@ -188,7 +260,7 @@ class TerrainUI {
 
     function visualizeGeoJson(geojson) {
       var projection = getProjection();
-      var ctx = $this.canvas.getContext("2d");
+      var ctx = canvas.getContext("2d");
       var path = d3.geoPath().projection(projection).context(ctx);
       ctx.beginPath();
       path(geojson);
@@ -197,7 +269,7 @@ class TerrainUI {
 
     function visualizeGeoJsonFill(geojson) {
       var projection = getProjection();
-      var ctx = $this.canvas.getContext("2d");
+      var ctx = canvas.getContext("2d");
       var path = d3.geoPath().projection(projection).context(ctx);
       ctx.beginPath();
       path(geojson);
@@ -217,8 +289,8 @@ class TerrainUI {
     }
 
     function getVisiblePoints() {
-      var width = $this.canvas.width,
-        height = $this.canvas.height;
+      var width = canvas.width,
+        height = canvas.height;
       var visiblePoints = $this.terrain.getHeightMap().filter(l => {
         var px = projection(l);
         var visible = 0 < px[0] && px[0] < width && 0 < px[1] && px[1] < height;
@@ -233,7 +305,7 @@ class TerrainUI {
       clear();
       //water base
       var projection = getProjection();
-      var ctx = $this.canvas.getContext("2d");
+      var ctx = canvas.getContext("2d");
       var path = d3.geoPath().projection(projection).context(ctx);
       var border = {
         'type': 'Sphere'
@@ -263,7 +335,7 @@ class TerrainUI {
       const scaleBar = d3.geoScaleBar()
         .projection(projection)
         .size([400, 320]);
-      d3.select($this.canvas).call(scaleBar);
+      d3.select(canvas).call(scaleBar);
     }
 
     function visualizeEdges(edges, points) {
@@ -354,8 +426,8 @@ class TerrainUI {
     };
 
     function getProjection() {
-      var width = $this.canvas.width,
-        height = $this.canvas.height;
+      var width = canvas.width,
+        height = canvas.height;
       if (typeof projection == "undefined") {
         //console.log('new projection');
         //set projection type here
@@ -383,8 +455,8 @@ class TerrainUI {
     };
 
     function resetView() {
-      var width = $this.canvas.width,
-        height = $this.canvas.height;
+      var width = canvas.width,
+        height = canvas.height;
       projection
         //.scale(width / 5.2)
         //.translate([width / 2, height / 2])
@@ -461,7 +533,7 @@ class TerrainUI {
 
     function visualizeBorder() {
       var projection = getProjection();
-      var ctx = $this.canvas.getContext("2d");
+      var ctx = canvas.getContext("2d");
       var path = d3.geoPath().projection(projection).context(ctx);
       var border = {
         'type': 'Sphere'
@@ -476,7 +548,7 @@ class TerrainUI {
     */
     function visualizeGraticuls() {
       var projection = getProjection();
-      var ctx = $this.canvas.getContext("2d");
+      var ctx = canvas.getContext("2d");
       var path = d3.geoPath().projection(projection).context(ctx);
       var graticule = d3.geoGraticule()
         .step([30, 30]);
@@ -490,7 +562,7 @@ class TerrainUI {
     */
     function visualizeEquator() {
       var projection = getProjection();
-      var ctx = $this.canvas.getContext("2d");
+      var ctx = canvas.getContext("2d");
       var path = d3.geoPath().projection(projection).context(ctx);
       var graticule = d3.geoGraticule()
         .step([0, 90]);

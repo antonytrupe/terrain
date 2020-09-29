@@ -228,6 +228,9 @@ class Terrain {
     this.getHeightMap = function() {
       return points;
     };
+    this.setHeightMap = function(p) {
+      points=p;
+    };
     this.copy = function(src) {
       //make a deep copy
       points = JSON.parse(JSON.stringify(src.getHeightMap()));

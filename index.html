@@ -18,7 +18,10 @@
       {
       overflow-x: auto;
       }
-      .step
+      .step_outer{
+      
+      }
+      .step_inner
       {
       background-color:#eee;
       margin:.5em;
@@ -33,13 +36,15 @@
       height:200px;
       float:left;
       }
-      button{
+      button, .button{
       margin:.5em;
       padding:.5em;
       font-size: large;
       border-radius: .5rem;
       background-color: white;
       vertical-align:top;
+      display:inline-block;
+      border:thin black solid;
       }
       .actions{
       display:inline-block;
@@ -105,8 +110,8 @@ input[type=range][orient=vertical]
     </p>
     <p>But I sometimes can't help redesigning the wheel, and chose to use canvas instead of svg for reasons, mostly performance, which requires rewiring all the d3 code that produces the images. And, I wanted to make globes, not just flat maps, which requires rewiring the algebra.</p>
     
-    <div class="a">
-      <div class="step" >
+    <div class="step_outer">
+      <div class="step_inner" >
         <h4>Boilerplate stuff</h4>
         <h5>Libraries</h5>
         <pre class="prettyprint"><code>&#x3C;!-- keep track of the state of the world, but no UI logic --&#x3E;
@@ -135,10 +140,10 @@ input[type=range][orient=vertical]
     </div>
     
     <!--points map-->
-    <div class="a">
-      <div class="step" >
+    <div id="flatpoints" class="step_outer">
+      <div class="step_inner" >
         <p>Generate some points on a flat, bounded plane</p>
-        <canvas id="flatpoints" width="320" height="200"></canvas>
+        <canvas  width="320" height="200"></canvas>
         <script>
           var flatWorld=new TerrainUI(document.getElementById('flatpoints'));
         </script>
@@ -184,10 +189,10 @@ this.visualizePointsFlat = function() {
     
     
     <!--basic transformations with grid-->
-    <div class="a">
-      <div class="step">
+    <div id="basic" class="step_outer">
+      <div class="step_inner">
         <p>Show the mesh instead of the points</p>
-        <canvas id="basic" width="320" height="200" ></canvas>
+        <canvas  width="320" height="200" ></canvas>
         <script>
           var basic=new TerrainUI(document.getElementById('basic'));
         </script>
@@ -200,14 +205,14 @@ this.visualizePointsFlat = function() {
     
     
     <!--  globe projection using svg -->
-    <div class="a">
-      <div class="step">
+    <div id="svg" class="step_outer">
+      <div class="step_inner">
         <p>All the documentation talks about how to use d3-geo with svg, so make sure we can get that working before switching to canvas</p>
-        <svg id="svg" width="320" height="200"></svg>
+        <svg  width="320" height="200"></svg>
       </div>
     </div>
     <script>
-      var svg = d3.select("#svg");
+      var svg = d3.select("#svg svg");
       var width = svg.attr('width'), height = svg.attr('height');
       
       var projection = d3.geoWinkel3()
@@ -241,14 +246,14 @@ this.visualizePointsFlat = function() {
         
     </script>
     <!--globe projection using canvas-->
-    <div class="a">
+    <div id="sphere" class="step_outer">
       <div class="step" >
         <p>Sphere Projection</p>
         <p style="float:left;">Now we need to figure out how to do the same thing with canvas</p>
-        <canvas id="sphere" width="400" height="200" ></canvas>
+        <canvas  width="400" height="200" ></canvas>
         <script>
           //get the canvas
-          var canvas = d3.select("#sphere");
+          var canvas = d3.select("#sphere canvas");
           //get the context
           var context = canvas.node().getContext("2d");
           //get the size of the canvas
@@ -279,14 +284,14 @@ this.visualizePointsFlat = function() {
       </div>
     </div>
     <!--generate random points on a globe-->
-    <div class="a">
-      <div class="step" >
+    <div id="sphere_random_points" class="step_outer">
+      <div class="step_inner" >
         <p>Sphere Random Points</p>
         <p style="float:left;"></p>
-        <canvas id="sphere_random_points" width="320" height="200" ></canvas>
+        <canvas  width="320" height="200" ></canvas>
         <script>
           //get the canvas
-          var canvas = d3.select("#sphere_random_points");      
+          var canvas = d3.select("#sphere_random_points canvas");
           var sphere_random_points=new TerrainUI(canvas.node());
         </script>
         <button onclick="sphere_random_points.generateAndVisualizePointsAndBorder()">Generate Points</button>
@@ -294,7 +299,7 @@ this.visualizePointsFlat = function() {
       </div>
     </div>
     <!--show voronoi polygons-->
-    <div class="a">
+    <div class="step_outer">
       <div class="step" >
         <p>Voronoi Shapes</p>
         <p style="float:left;"></p>
@@ -311,11 +316,11 @@ this.visualizePointsFlat = function() {
     </div>
     
     <!--triangles/voronoi-->
-    <div class="a">
-      <div class="step" >
+    <div id="triangles_andor_polygons" class="step_outer">
+      <div class="step_inner" >
         <p>Voronoi/Triangles</p>
         <p style="float:left;"></p>
-        <canvas id="triangles_andor_polygons" width="320" height="200" ></canvas>
+        <canvas  width="320" height="200" ></canvas>
         <script>
           //get the canvas
           var triangles_andor_polygons=new TerrainUI(document.getElementById('triangles_andor_polygons'));
@@ -332,8 +337,8 @@ this.visualizePointsFlat = function() {
     </div>
 
     <!--transformations, coast-->
-    <div class="a">
-      <div class="step" >
+    <div class="step_outer">
+      <div class="step_inner" >
         <p>Transformations, Coast</p>
         <p style="float:left;"></p>
         <canvas id="transformations_coast" width="320" height="200" ></canvas>
@@ -354,11 +359,11 @@ this.visualizePointsFlat = function() {
     </div>
     
     <!--zoom, pan, scale-->
-    <div class="a">
-      <div class="step" >
+    <div id="zoompan" class="step_outer">
+      <div class="step_inner" >
         <p>Zoom, Panning</p>
         <p style="float:left;"></p>
-        <canvas id="zoompan" width="320" height="200" ></canvas>
+        <canvas  width="320" height="200" ></canvas>
         <script>
           //get the canvas
           var zoompan=new TerrainUI(document.getElementById('zoompan'));
@@ -372,11 +377,11 @@ this.visualizePointsFlat = function() {
     </div>
 
     <!--terrain-->
-    <div class="a">
-      <div class="step" >
+    <div id="terrain" class="step_outer">
+      <div class="step_inner" >
         <p>Terrain</p>
         <p style="float:left;"></p>
-        <canvas id="terrain" width="320" height="200" ></canvas>
+        <canvas class="canvas" width="320" height="200" ></canvas>
         <script>
           //get the canvas
           var terrain=new TerrainUI(document.getElementById('terrain'));
@@ -390,16 +395,16 @@ this.visualizePointsFlat = function() {
     </div>
 
     <!--interactive terrain-->
-    <div class="a">
-      <div class="step" >
+    <div id="interactive" class="step_outer">
+      <div class="step_inner" >
         <p>Point and Click Terrain Modification</p>
         <p style="float:left;"></p>
-        <canvas id="interactive" width="320" height="200" ></canvas>
+        <canvas class="canvas" width="320" height="200" ></canvas>
         <script>
           //get the canvas
           var interactive=new TerrainUI(document.getElementById('interactive'));
           interactive.addZoomPan();
-          interactive.generateAndVisualizeHeightmap();
+          interactive.generateAndVisualizeTerrain();
           interactive.addHandlers();
         </script>
 <div>
@@ -420,41 +425,48 @@ this.visualizePointsFlat = function() {
     </div>
 
     <!--Saving-->
-    <div class="a">
-      <div class="step" >
+    <div class="step_outer" id="save">
+      <div class="step_inner" >
         <p>Saving/Loading</p>
         <p style="float:left;"></p>
-        <canvas id="save" width="320" height="200" ></canvas>
-        <script>
+        <canvas class="canvas" width="320" height="200" ></canvas>
+        <button onclick="save.copyAndVisualizeTerrain(interactive)">Copy from Above</button>
+        <button onclick="save.resetViewAndVisualizeTerrain()">Reset View</button>
+        <div class="button">
+          <button onclick="save.save()">Save</button>
+          <input class="saveInput" style="margin:1em 1em 1em;width:8em;font-size:large;" />
+        </div>
+        <div class="button">
+          <button onclick="save.loadAndVisualizeTerrain()">Load</button>
+          <select class="loadSelect" style="margin:1em 1em 1em;min-width:8em;font-size:large;"></select>
+          <button onclick="save.delete()">Delete</button>
+
+        </div>
+<script>
           //get the canvas
           var save=new TerrainUI(document.getElementById('save'));
           save.addZoomPan();
-          save.generateAndVisualizeHeightmap();
+          save.generateAndVisualizeTerrain();
         </script>
-        <button onclick="save.copyAndVisualizeTerrain(interactive)">Copy from Above</button>
-        <button onclick="save.resetViewAndVisualizeTerrain()">Reset View</button>
-        <button onclick="save.save()">Save<input style="display:block;" /></button>
-        <button onclick="save.loadAndVisualizeTerrain()">Load<select style="display:block;"><option>1</option><option>2</option></select></button>
       </div>
     </div>
 
     <!--Place populations-->
-    <div class="a">
-      <div class="step" >
+    <div id="pop" class="step_outer">
+      <div class="step_inner" >
         <p>Place Populations</p>
         <p style="float:left;"></p>
-        <canvas id="pop" width="320" height="200" ></canvas>
+        <canvas class="canvas" width="320" height="200" ></canvas>
         <script>
           //get the canvas
           var pop=new TerrainUI(document.getElementById('pop'));
           pop.addZoomPan();
-          pop.generateAndVisualizeHeightmap();
+          pop.generateAndVisualizeTerrain();
         </script>
         <button onclick="pop.copyAndVisualizeTerrain(interactive)">Copy from Above</button>
         <button onclick="interactive.resetViewAndVisualizeTerrain()">Reset View</button>
       </div>
     </div>
-
 
   </body>
 </html>
