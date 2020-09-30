@@ -1,6 +1,6 @@
 <html>
   <head>
-  <title>Generating fantasy maps, on a globe</title>
+    <title>Generating fantasy maps, on a globe</title>
     <style>
       body{
       margin: 0px auto;
@@ -19,7 +19,6 @@
       overflow-x: auto;
       }
       .step_outer{
-      
       }
       .step_inner
       {
@@ -57,18 +56,18 @@
       }
       code{
       font-size: .8em;
-    background-color: #F7F7F7;
-    margin: 0;
-    padding: 0;
-    }
-input[type=range][orient=vertical]
-{
-    writing-mode: bt-lr; /* IE */
-    -webkit-appearance: slider-vertical; /* WebKit */
-    width: 8px;
-    height: 175px;
-    padding: 0 5px;
-}
+      background-color: #F7F7F7;
+      margin: 0;
+      padding: 0;
+      }
+      input[type=range][orient=vertical]
+      {
+      writing-mode: bt-lr; /* IE */
+      -webkit-appearance: slider-vertical; /* WebKit */
+      width: 8px;
+      height: 175px;
+      padding: 0 5px;
+      }
     </style>
     <!-- keep track of the state of the world, but no UI logic -->
     <script src="terrain.js"></script>
@@ -93,12 +92,10 @@ input[type=range][orient=vertical]
     <script src="https://unpkg.com/d3-geo-zoom"></script>
     <!-- for scale -->
     <script src="https://unpkg.com/d3-geo-scale-bar@1.0.2/build/d3-geo-scale-bar.min.js"></script>
-
     <!-- psudo random number generator that is seedable, nice for being able to reproduce issues -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/seedrandom/3.0.5/seedrandom.min.js"></script>
     <!-- help to syntax highlight code thats on the screen -->
     <script src="https://cdn.jsdelivr.net/gh/google/code-prettify@master/loader/run_prettify.js"></script>
-    
   </head>
   <body >
     <h1>Generating fantasy maps, on a globe</h1>
@@ -109,7 +106,6 @@ input[type=range][orient=vertical]
       Flat, bounded maps always bothered me, worlds are round, baring special physics/science/technology, so lets put stuff on a globe instead of a flat plane!
     </p>
     <p>But I sometimes can't help redesigning the wheel, and chose to use canvas instead of svg for reasons, mostly performance, which requires rewiring all the d3 code that produces the images. And, I wanted to make globes, not just flat maps, which requires rewiring the algebra.</p>
-    
     <div class="step_outer">
       <div class="step_inner" >
         <h4>Boilerplate stuff</h4>
@@ -138,7 +134,6 @@ input[type=range][orient=vertical]
 </pre>
       </div>
     </div>
-    
     <!--points map-->
     <div id="flatpoints" class="step_outer">
       <div class="step_inner" >
@@ -147,15 +142,15 @@ input[type=range][orient=vertical]
         <script>
           var flatWorld=new TerrainUI(document.getElementById('flatpoints'));
         </script>
-        
-        <div><button onclick="flatWorld.generateAndVisualizePointsFlat()">Generate Points</button>
-        <pre class="usage prettyprint lang-js"><code>flatWorld.generateAndVisualizePointsFlat()</code></pre>
-        <pre class="prettyprint lang-js"><code>this.generateAndVisualizePointsFlat = function() {
+        <div>
+          <button onclick="flatWorld.generateAndVisualizePointsFlat()">Generate Points</button>
+          <pre class="usage prettyprint lang-js"><code>flatWorld.generateAndVisualizePointsFlat()</code></pre>
+          <pre class="prettyprint lang-js"><code>this.generateAndVisualizePointsFlat = function() {
   this.terrain.generatePointsFlat();
   this.clear();
   this.visualizePointsFlat();
 };</code></pre>
-<pre class="prettyprint lang-js"><code>this.generatePointsFlat = function(n) {
+          <pre class="prettyprint lang-js"><code>this.generatePointsFlat = function(n) {
   var n = n || 256;
   this.points = [];
   for (var i = 0; i < n; i++) {
@@ -163,7 +158,7 @@ input[type=range][orient=vertical]
                       (myrng() - .5) * this.extent.height]);
   }
 };</code></pre>
-<pre class="prettyprint lang-js"><code>
+          <pre class="prettyprint lang-js"><code>
 this.visualizePointsFlat = function() {
       var ctx = this.canvas.getContext("2d");
       //console.log(this.terrain.mesh);
@@ -180,14 +175,10 @@ this.visualizePointsFlat = function() {
         ctx.closePath();
       });
     };</code></pre>
-    
-</div>
+        </div>
         <span><button onclick="flatWorld.improveAndVisualizePointsFlat()">Improve Points</button><span>how to call</span><span>interesting code</span></span>
-        
       </div>
     </div>
-    
-    
     <!--basic transformations with grid-->
     <div id="basic" class="step_outer">
       <div class="step_inner">
@@ -202,8 +193,6 @@ this.visualizePointsFlat = function() {
         <button onclick="basic.improveAndVisualizeMeshFlat()">Improve Mesh</button>
       </div>
     </div>
-    
-    
     <!--  globe projection using svg -->
     <div id="svg" class="step_outer">
       <div class="step_inner">
@@ -314,7 +303,6 @@ this.visualizePointsFlat = function() {
         <button onclick="sphere_voronoi.improveAndVisualizeVoronoi()">Improve Points</button>
       </div>
     </div>
-    
     <!--triangles/voronoi-->
     <div id="triangles_andor_polygons" class="step_outer">
       <div class="step_inner" >
@@ -335,7 +323,6 @@ this.visualizePointsFlat = function() {
         <button onclick="triangles_andor_polygons.visualizeTriangles()">Show Triangles</button>
       </div>
     </div>
-
     <!--transformations, coast-->
     <div class="step_outer">
       <div class="step_inner" >
@@ -353,11 +340,9 @@ this.visualizePointsFlat = function() {
         <button onclick="transformations_coast.addIslandAndVisualizeHeightmap(15)">Add 15 islands</button>
         <button onclick="transformations_coast.setSeaLevelToMedianAndVisualizeHeightmap()" title="find middle point and shift everything so the middle point is now 0.5">Set sea level to median</button>
         <button onclick="transformations_coast.normalizeAndVisualizeHeightmap()" title="0-1">normalize heightmap</button>
-
         <button onclick="transformations_coast.visualizeCoast()">Draw Coast</button>
       </div>
     </div>
-    
     <!--zoom, pan, scale-->
     <div id="zoompan" class="step_outer">
       <div class="step_inner" >
@@ -369,13 +354,12 @@ this.visualizePointsFlat = function() {
           var zoompan=new TerrainUI(document.getElementById('zoompan'));
           zoompan.addZoomPan();
           zoompan.generateAndVisualizeTerrain();
-
+          
         </script>
         <button onclick="zoompan.copyAndVisualizeHeightmap(transformations_coast)">Copy from Above</button>
         <button onclick="zoompan.resetViewAndVisualizeHeightmap()">Reset View</button>
       </div>
     </div>
-
     <!--terrain-->
     <div id="terrain" class="step_outer">
       <div class="step_inner" >
@@ -393,7 +377,6 @@ this.visualizePointsFlat = function() {
         <button onclick="terrain.resetViewAndVisualizeTerrain()">Reset View</button>
       </div>
     </div>
-
     <!--interactive terrain-->
     <div id="interactive" class="step_outer">
       <div class="step_inner" >
@@ -407,23 +390,22 @@ this.visualizePointsFlat = function() {
           interactive.generateAndVisualizeTerrain();
           interactive.addHandlers();
         </script>
-<div>
-        <button onclick="interactive.copyAndVisualizeTerrain(terrain)">Copy from Above</button>
-        <button onclick="interactive.resetToFlat()">Reset to flat</button>
-        <button onclick="interactive.setSeaLevelToMedianAndVisualizeHeightmap()" title="find middle point and shift everything so the middle point is now 0.5">Set sea level to median</button>
-        <button onclick="interactive.normalizeAndVisualizeHeightmap()" title="0-1">normalize heightmap</button>
-        <button onclick="interactive.resetViewAndVisualizeTerrain()">Reset View</button>
-<span>
-        <input type="range" orient="vertical" id="height" name="height" min="-1" max="1" value="1" step=".05">
-        <label for="height">Height</label>
-</span><span>
-        <input type="range" id="width" name="width" min="0" max="3.1" value="1" step=".1">
-        <label for="width">Width</label>
-</span>
-</div>
+        <div>
+          <button onclick="interactive.copyAndVisualizeTerrain(terrain)">Copy from Above</button>
+          <button onclick="interactive.resetToFlat()">Reset to flat</button>
+          <button onclick="interactive.setSeaLevelToMedianAndVisualizeHeightmap()" title="find middle point and shift everything so the middle point is now 0.5">Set sea level to median</button>
+          <button onclick="interactive.normalizeAndVisualizeHeightmap()" title="0-1">normalize heightmap</button>
+          <button onclick="interactive.resetViewAndVisualizeTerrain()">Reset View</button>
+          <span>
+          <input type="range" orient="vertical" id="height" name="height" min="-1" max="1" value="1" step=".05">
+          <label for="height">Height</label>
+          </span><span>
+          <input type="range" id="width" name="width" min="0" max="3.1" value="1" step=".1">
+          <label for="width">Width</label>
+          </span>
+        </div>
       </div>
     </div>
-
     <!--Saving-->
     <div class="step_outer" id="save">
       <div class="step_inner" >
@@ -440,9 +422,8 @@ this.visualizePointsFlat = function() {
           <button onclick="save.loadAndVisualizeTerrain()">Load</button>
           <select class="loadSelect" style="margin:1em 1em 1em;min-width:8em;font-size:large;"></select>
           <button onclick="save.delete()">Delete</button>
-
         </div>
-<script>
+        <script>
           //get the canvas
           var save=new TerrainUI(document.getElementById('save'));
           save.addZoomPan();
@@ -450,7 +431,6 @@ this.visualizePointsFlat = function() {
         </script>
       </div>
     </div>
-
     <!--Place populations-->
     <div id="pop" class="step_outer">
       <div class="step_inner" >
@@ -463,10 +443,10 @@ this.visualizePointsFlat = function() {
           pop.addZoomPan();
           pop.generateAndVisualizeTerrain();
         </script>
-        <button onclick="pop.copyAndVisualizeTerrain(interactive)">Copy from Above</button>
-        <button onclick="interactive.resetViewAndVisualizeTerrain()">Reset View</button>
+        <button onclick="pop.copyAndVisualizeTerrain(save)">Copy from Above</button>
+        <button onclick="pop.addPopulationCenter()">Add Population Center</button>
+        <button onclick="pop.resetViewAndVisualizeTerrain()">Reset View</button>
       </div>
     </div>
-
   </body>
 </html>

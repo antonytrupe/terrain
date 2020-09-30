@@ -1,69 +1,60 @@
-"use strict";
 class TerrainUI {
   constructor(container) {
-    "use strict";
     var $this = this;
     var container = container;
     var canvas = container.getElementsByTagName('canvas')[0];
     this.terrain = new Terrain(this.extent);
     var projection;
-
-    this.delete=function(){
+    this.delete = function() {
       //delete the points value
       var name = container.getElementsByClassName('loadSelect')[0].value;
       window.localStorage.removeItem(name);
       //remove the name from the list
-      var saves=getSaves();
-      var saves = saves.filter(e=> e !== name );
-      window.localStorage.setItem('terrain_saves',JSON.stringify(saves));
+      var saves = getSaves();
+      var saves = saves.filter(e => e !== name);
+      window.localStorage.setItem('terrain_saves', JSON.stringify(saves));
       loadSavedList();
     };
 
-    function getSaves(){
-      var n=window.localStorage.getItem('terrain_saves');
-      var saves=[];
-      if(n && n.length>0){
-        saves=saves.concat(JSON.parse(n));
+    function getSaves() {
+      var n = window.localStorage.getItem('terrain_saves');
+      var saves = [];
+      if (n && n.length > 0) {
+        saves = saves.concat(JSON.parse(n));
       }
       return saves;
     }
-
-    this.save=function(){
+    this.save = function() {
       var name = container.getElementsByClassName('saveInput')[0].value;
-      if(!name)
-      {
+      if (!name) {
         return;
       }
-	  //get the list of already saved terrains
-      var saves=getSaves();
-      if(saves.indexOf(name)==-1){
+      //get the list of already saved terrains
+      var saves = getSaves();
+      if (saves.indexOf(name) == -1) {
         saves.push(name);
       }
-      window.localStorage.setItem('terrain_saves',JSON.stringify(saves));
-      window.localStorage.setItem(name,JSON.stringify($this.terrain.getHeightMap()));
-
+      window.localStorage.setItem('terrain_saves', JSON.stringify(saves));
+      window.localStorage.setItem(name, JSON.stringify($this.terrain.getHeightMap()));
       //update load list
       loadSavedList();
     };
 
-    function load(){
+    function load() {
       var name = container.querySelector('.loadSelect').selectedOptions[0].value;
-      var t=window.localStorage.getItem(name);
+      var t = window.localStorage.getItem(name);
       $this.terrain.setHeightMap(JSON.parse(t));
     };
 
-    function loadSavedList(){
-      var n=window.localStorage.getItem('terrain_saves');
-      var select=container.getElementsByClassName('loadSelect');
-      if(select.length>0){
- 
+    function loadSavedList() {
+      var n = window.localStorage.getItem('terrain_saves');
+      var select = container.getElementsByClassName('loadSelect');
+      if (select.length > 0) {
         //clear the list
-        select[0].options.length=0;
-
-        if(n)
-        {
-          var saves=JSON.parse(n);
-          saves.forEach( e=>{
+        select[0].options.length = 0;
+        if (n) {
+          var saves = JSON.parse(n);
+          saves.forEach(e => {
             var opt1 = document.createElement('option');
             opt1.value = e;
             opt1.text = e;
@@ -73,7 +64,6 @@ class TerrainUI {
       }
     }
     loadSavedList();
-
     this.addZoomPan = function() {
       d3.geoZoom()
         .northUp(true)
@@ -81,7 +71,6 @@ class TerrainUI {
         .onMove(visualizeHeightmap)
         (canvas);
     };
-
     this.addHandlers = function() {
       d3.select(canvas).on("click", function(e) {
         //console.log(this);
@@ -181,7 +170,7 @@ class TerrainUI {
       clear();
       visualizeTerrain();
     };
-    this.loadAndVisualizeTerrain=function(){
+    this.loadAndVisualizeTerrain = function() {
       load();
       clear();
       visualizeTerrain();
@@ -470,6 +459,7 @@ class TerrainUI {
       //console.log(projection.scale());
     }
     /**draw  short strokes to indicate slopes, make it look like a cartographers map*/
+    //TODO
     function visualizeSlopes(svg, render) {
       var h = render.h;
       var strokes = [];
@@ -546,12 +536,14 @@ class TerrainUI {
     /**
     add lat/lon lines
     */
-    function visualizeGraticuls() {
+    function visualizeGraticuls(lat,lon) {
+      lat=lat||30;
+      lon=lon||30;
       var projection = getProjection();
       var ctx = canvas.getContext("2d");
       var path = d3.geoPath().projection(projection).context(ctx);
       var graticule = d3.geoGraticule()
-        .step([30, 30]);
+        .step([lat, lon]);
       ctx.beginPath();
       path(graticule());
       ctx.strokeStyle = "#000";
