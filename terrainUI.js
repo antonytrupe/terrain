@@ -3,8 +3,148 @@ class TerrainUI {
     var $this = this;
     var container = container;
     var canvas = container.getElementsByTagName('canvas')[0];
-    this.terrain = new Terrain(this.extent);
+    this.terrain = new Terrain();
     var projection;
+    var path;
+    this.generatePopulationCenter = function() {
+      var config = {
+        'size_percentiles': [],
+
+          'max_levels': {
+            'barbarian': {'type':'pc',
+              'die': 4,
+              'count': 1
+            },
+            'bard': {'type':'pc',
+              'die': 6,
+              'count': 1
+            },
+            'cleric': {'type':'pc',
+              'die': 6,
+              'count': 1
+            },
+            'druid': {'type':'pc',
+              'die': 6,
+              'count': 1
+            },
+            'fighter': {'type':'pc',
+              'die': 8,
+              'count': 1
+            },
+            'monk': {'type':'pc',
+              'die': 4,
+              'count': 1
+            },
+            'paladin': {'type':'pc',
+              'die': 3,
+              'count': 1
+            },
+            'ranger': {'type':'pc',
+              'die': 3,
+              'count': 1
+            },
+            'rogue': {'type':'pc',
+              'die': 8,
+              'count': 1
+            },
+            'sorcerer': {'type':'pc',
+              'die': 4,
+              'count': 1
+            },
+            'wizard': {'type':'pc',
+              'die': 4,
+              'count': 1
+            },
+            'adept': {'type':'npc','npcPercent':.005,
+              'die': 6,
+              'count': 1
+            },
+            'aristocrat': {'type':'npc','npcPercent':.005,
+              'die': 4,
+              'count': 1
+            },
+            'commoner': {'type':'npc','npcPercent':.91,
+              'die': 4,
+              'count': 4
+            },
+            'expert': {'type':'npc','npcPercent':.03,
+              'die': 4,
+              'count': 3
+            },
+            'warrior': {'type':'npc','npcPercent':.05,
+              'die': 4,
+              'count': 2
+            }
+          },
+        'thorp': {'community_size_modifier':-3,'community_size_modifier_count':1,'min_population':20,'max_population':80,'power_center_modifier' : 2},
+        'hamlet': {'community_size_modifier':-2,'community_size_modifier_count':1,'min_population':81,'max_population':400,'power_center_modifier' : 2},
+        'village': {'community_size_modifier':-1,'community_size_modifier_count':1,'min_population':401,'max_population':900,'power_center_modifier' : 2},
+        'small_town': {'community_size_modifier':0,'community_size_modifier_count':1,'min_population':901,'max_population':2000,'power_center_modifier' : 2},
+        'large_town': {'community_size_modifier':3,'community_size_modifier_count':1,'min_population':2001,'max_population':5000,'power_center_modifier' : 2},
+        'small_city': {'community_size_modifier':6,'community_size_modifier_count':2,'min_population':5001,'max_population':12000,'power_center_modifier' : 2},
+        'large_city': {'community_size_modifier':9,'community_size_modifier_count':3,'min_population':12001,'max_population':25000,'power_center_modifier' : 2},
+        'metropolis': {'community_size_modifier':12,'community_size_modifier_count':4,'min_population':25001,'max_population':50000,'power_center_modifier' : 2}
+      };
+      //
+      var sizePercentile = this.terrain.percentile();
+      var community_size;
+      console.log(sizePercentile);
+      if (sizePercentile <= 10) {
+        community_size='thorp';
+      } else if (sizePercentile <= 30) {
+        community_size='hamlet';
+      } else if (sizePercentile <= 50) {
+        community_size='village';
+      } else if (sizePercentile <= 70) {
+        community_size='small_town';
+      } else if (sizePercentile <= 85) {
+        community_size='large_town';
+      } else if (sizePercentile <= 95) {
+        community_size='small_city';
+      } else if (sizePercentile <= 99) {
+        community_size='large_city';
+        population = this.terrain.random(12001, 25000);
+      } else {
+        community_size='metropolis';
+      }
+      var populationClasses={};
+      var populationTotal = this.terrain.random(config[community_size].min_population,config[community_size].max_population);
+      var runningPopulationTotal=0;
+      //generate pc classes
+      Object.entries(config.max_levels).forEach(([className,dice])=>{
+		populationClasses[className]={};
+        var max_level_count=config[community_size].community_size_modifier_count;
+        for(var mlc=0;mlc<max_level_count;mlc++){
+          var maxLevel=config[community_size].community_size_modifier;
+          for (var i=0;i<dice.count;i++){
+            maxLevel+=random(1,dice.die);
+            //console.log(maxLevel);
+            for(var nLevel=maxLevel,cLevel=1;nLevel>1;nLevel/=2,cLevel*=2)
+            {
+	          //don't calculate npc classes this way for level ones
+              if(dice.type=='npc' && Math.round(nLevel)==1)
+              {
+                continue;
+              }
+              populationClasses[className][Math.round(nLevel)]=populationClasses[className][Math.round(nLevel)]||0;
+              populationClasses[className][Math.round(nLevel)]+=cLevel;
+              runningPopulationTotal+=cLevel;
+            }
+          }
+        }
+      });
+      //console.log(populationClasses);
+      var remainingPopulation=populationTotal-runningPopulationTotal;
+      Object.entries(config.max_levels).forEach(([className,dice])=>{
+        if(dice.type=='npc'){
+          populationClasses[className][1]=Math.round(remainingPopulation*dice.npcPercent);
+        }
+      });
+      console.log(populationClasses);
+    };
+
+    function random(min,max){return $this.terrain.random(min,max);}
+
     this.delete = function() {
       //delete the points value
       var name = container.getElementsByClassName('loadSelect')[0].value;
@@ -64,20 +204,18 @@ class TerrainUI {
       }
     }
     loadSavedList();
+
     this.addZoomPan = function() {
       d3.geoZoom()
-        .northUp(true)
+        //.northUp(true)
         .projection(getProjection())
         .onMove(visualizeHeightmap)
         (canvas);
     };
+
     this.addHandlers = function() {
       d3.select(canvas).on("click", function(e) {
-        //console.log(this);
-        //console.log(e);
-        //console.log(projection.invert([e.offsetX,e.offsetY]));
         var ll = projection.invert([e.offsetX, e.offsetY])
-        var width = (1 * Math.PI) * (3 / 8);
         var w = document.getElementById('width').value;
         var height = document.getElementById('height').value;
         $this.terrain.mountain({
@@ -248,18 +386,16 @@ class TerrainUI {
     };
 
     function visualizeGeoJson(geojson) {
-      var projection = getProjection();
       var ctx = canvas.getContext("2d");
-      var path = d3.geoPath().projection(projection).context(ctx);
+      var path=getPath();
       ctx.beginPath();
       path(geojson);
       ctx.stroke();
     }
 
     function visualizeGeoJsonFill(geojson) {
-      var projection = getProjection();
       var ctx = canvas.getContext("2d");
-      var path = d3.geoPath().projection(projection).context(ctx);
+      var path=getPath();
       ctx.beginPath();
       path(geojson);
       //ctx.fillStyle = "#FF0000";
@@ -287,6 +423,17 @@ class TerrainUI {
       });
       return visiblePoints;
     }
+
+    function getPath(){
+	  if(!path){
+		console.log('new path method');
+        var projection = getProjection();
+        var ctx = canvas.getContext("2d");
+        path = d3.geoPath().context(ctx).projection(projection);
+      }
+      return path;
+    }
+
     /**
     clear, border, height intervals
      */
@@ -295,7 +442,7 @@ class TerrainUI {
       //water base
       var projection = getProjection();
       var ctx = canvas.getContext("2d");
-      var path = d3.geoPath().projection(projection).context(ctx);
+      var path = getPath();
       var border = {
         'type': 'Sphere'
       };
@@ -304,8 +451,9 @@ class TerrainUI {
       ctx.fillStyle = d3.interpolateViridis(-1);
       ctx.fill();
       // make steps relative to current extent
-      var visiblePoints = getVisiblePoints();
-      var h = visiblePoints.map(p => p[2])
+      //var visiblePoints = getVisiblePoints();
+      //var h = visiblePoints.map(p => p[2])
+      var h=$this.terrain.getHeightMap().map(p => p[2]);
       var lo = d3.min(h);
       var hi = d3.max(h);
       //contours
@@ -364,10 +512,9 @@ class TerrainUI {
       });
     };
     this.visualizePoints2 = function() {
-      var projection = getProjection();
       //get the function that generates the d attribute from svg's line function, not directly usable for canvas
       var ctx = this.canvas.getContext("2d");
-      var path = d3.geoPath().projection(projection).context(ctx);
+      var path=getPath();
       var randomPoint = {
         'type': 'MultiPoint',
         'coordinates': this.terrain.getPoints()
@@ -377,21 +524,18 @@ class TerrainUI {
       ctx.stroke();
     };
     this.visualizeTriangles = function() {
-      var projection = getProjection();
       //get the function that generates the d attribute from svg's line function, not directly usable for canvas
       var ctx = this.canvas.getContext("2d");
-      var path = d3.geoPath().projection(projection).context(ctx);
+      var path=getPath();
       clear();
       //visualizeBorder();
       ctx.beginPath();
-      //console.log(this.terrain.triangles);
       path(d3.geoVoronoi().triangles(this.terrain.getPoints()));
       ctx.stroke();
     };
     /**
     clear, borders coast */
     this.visualizeCoast = function() {
-      //console.log('visualizeCoast');
       clear();
       visualizeBorder();
       //visualizeGraticuls();
@@ -418,22 +562,22 @@ class TerrainUI {
       var width = canvas.width,
         height = canvas.height;
       if (typeof projection == "undefined") {
-        //console.log('new projection');
+	console.log('new projection object');
         //set projection type here
         //geoOrthographic
         //geoWinkel3
         projection = d3.geoWinkel3()
-          //.scale(width / 5.2)
-          //.translate([width / 2, height / 2])
+          //.scale((Math.min(width, height)) / 2)
+          .translate([width / 2, height / 2])
           //.rotate([0,0,0])
           .fitExtent([
             [6, 6],
             [width - 6, height - 6]
           ], {
             'type': 'Sphere'
-          });
+          })
+;
       }
-      //console.log(projection.scale());
       return projection;
     }
     this.resetToFlat = function() {
@@ -456,7 +600,6 @@ class TerrainUI {
         ], {
           'type': 'Sphere'
         });
-      //console.log(projection.scale());
     }
     /**draw  short strokes to indicate slopes, make it look like a cartographers map*/
     //TODO
@@ -522,9 +665,9 @@ class TerrainUI {
     }
 
     function visualizeBorder() {
-      var projection = getProjection();
+      //var projection = getProjection();
       var ctx = canvas.getContext("2d");
-      var path = d3.geoPath().projection(projection).context(ctx);
+      var path=getPath();
       var border = {
         'type': 'Sphere'
       };
@@ -536,12 +679,12 @@ class TerrainUI {
     /**
     add lat/lon lines
     */
-    function visualizeGraticuls(lat,lon) {
-      lat=lat||30;
-      lon=lon||30;
-      var projection = getProjection();
+    function visualizeGraticuls(lat, lon) {
+      lat = lat || 30;
+      lon = lon || 30;
+      //var projection = getProjection();
       var ctx = canvas.getContext("2d");
-      var path = d3.geoPath().projection(projection).context(ctx);
+      var path=getPath();
       var graticule = d3.geoGraticule()
         .step([lat, lon]);
       ctx.beginPath();
@@ -555,7 +698,7 @@ class TerrainUI {
     function visualizeEquator() {
       var projection = getProjection();
       var ctx = canvas.getContext("2d");
-      var path = d3.geoPath().projection(projection).context(ctx);
+      var path=getPath();
       var graticule = d3.geoGraticule()
         .step([0, 90]);
       ctx.beginPath();
@@ -567,7 +710,7 @@ class TerrainUI {
       //var projection = getProjection();
       //get the function that generates the d attribute from svg's line function, not directly usable for canvas
       //var ctx = this.canvas.getContext("2d");
-      //var path = d3.geoPath().projection(projection).context(ctx);
+      //var path=getPath();
       clear();
       visualizeBorder();
       visualizeGeoJson(this.terrain.getCellMesh());
@@ -576,10 +719,9 @@ class TerrainUI {
       var projection = getProjection()
       //get the function that generates the d attribute from svg's line function, not directly usable for canvas
       var ctx = this.canvas.getContext("2d");
-      var path = d3.geoPath().projection(projection).context(ctx);
+      var path=getPath();
       clear();
       visualizeBorder();
-      //console.log(this.terrain.cellMesh);
       ctx.beginPath();
       path(this.terrain.voronoi.cellMesh);
       ctx.strokeStyle = "#00F";

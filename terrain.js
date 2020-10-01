@@ -1,11 +1,21 @@
 class Terrain {
   constructor() {
-    const POINT_COUNT = 1024;
+    const POINT_COUNT = 8;
     const SEED = 996;
     var srand = new Math.seedrandom(SEED);
     var $this = this;
     /**[[lat,lon,height]] */
     var points = [];
+
+    this.random=function(min, max) {
+      min = min || 1;
+      max = max || 100;
+      return Math.round(srand() * (max - min) + 1 + min);
+    };
+
+    this.percentile=function() {
+      return this.random(1, 100);
+    };
     this.getPoints = function() {
       return points.map(x => [x[0], x[1]]);
     };
@@ -28,10 +38,8 @@ class Terrain {
     this.setSeaLevel = function(q) {
       var s = points.map(x => x[2]).sort(d3.ascending);
       var delta = d3.quantile(s, q);
-      //console.log(delta);
       for (var i = 0; i < points.length; i++) {
         points[i][2] -= delta;
-        //console.log( points[i][2]);
       }
     };
     this.generateGoodPoints = function() {
@@ -59,13 +67,9 @@ class Terrain {
       height,
       width
     }) {
-      //console.log(center);
       center = center || randomPoint();
       height = height || 1;
       width = width || (1 * Math.PI) * (1 / 8);
-      //console.log(center);
-      //console.log(height);
-      console.log(width);
       var newvals = []
       newvals.length = points.length;
       newvals.fill(0);
@@ -108,7 +112,6 @@ class Terrain {
           }
         }
       }
-      //console.log(newvals);
       add(newvals);
     };
     this.getCellMesh = function() {
@@ -120,10 +123,6 @@ class Terrain {
     this.getCenters = function() {
       return delaunay.centers;
     };
-
-    function getEdges() {
-      return edges;
-    }
     this.getHeightMap = function() {
       return points;
     };
@@ -153,7 +152,6 @@ class Terrain {
     }
     this.generatePoints = function(n) {
       //var SEED = Math.round(Math.random()*1000);
-      //console.log(SEED);
       srand = new Math.seedrandom(SEED);
       var n = n || POINT_COUNT;
       points = [];

@@ -324,11 +324,11 @@ this.visualizePointsFlat = function() {
       </div>
     </div>
     <!--transformations, coast-->
-    <div class="step_outer">
+    <div id="transformations_coast" class="step_outer">
       <div class="step_inner" >
         <p>Transformations, Coast</p>
         <p style="float:left;"></p>
-        <canvas id="transformations_coast" width="320" height="200" ></canvas>
+        <canvas width="320" height="200" ></canvas>
         <script>
           //get the canvas
           var transformations_coast=new TerrainUI(document.getElementById('transformations_coast'));
@@ -352,9 +352,8 @@ this.visualizePointsFlat = function() {
         <script>
           //get the canvas
           var zoompan=new TerrainUI(document.getElementById('zoompan'));
-          zoompan.addZoomPan();
           zoompan.generateAndVisualizeTerrain();
-          
+          zoompan.addZoomPan();
         </script>
         <button onclick="zoompan.copyAndVisualizeHeightmap(transformations_coast)">Copy from Above</button>
         <button onclick="zoompan.resetViewAndVisualizeHeightmap()">Reset View</button>
@@ -370,7 +369,7 @@ this.visualizePointsFlat = function() {
           //get the canvas
           var terrain=new TerrainUI(document.getElementById('terrain'));
           terrain.addZoomPan();
-          terrain.generateAndVisualizeTerrain();
+          terrain.copyAndVisualizeTerrain(zoompan);
         </script>
         <button onclick="terrain.copyAndVisualizeTerrain(zoompan)">Copy from Above</button>
         <button onclick="terrain.generateAndVisualizeTerrain()">Generate</button>
@@ -387,7 +386,7 @@ this.visualizePointsFlat = function() {
           //get the canvas
           var interactive=new TerrainUI(document.getElementById('interactive'));
           interactive.addZoomPan();
-          interactive.generateAndVisualizeTerrain();
+          interactive.copyAndVisualizeTerrain(terrain);
           interactive.addHandlers();
         </script>
         <div>
@@ -444,7 +443,7 @@ this.visualizePointsFlat = function() {
           pop.generateAndVisualizeTerrain();
         </script>
         <button onclick="pop.copyAndVisualizeTerrain(save)">Copy from Above</button>
-        <button onclick="pop.addPopulationCenter()">Add Population Center</button>
+        <button onclick="pop.generatePopulationCenter()">Add Population Center</button>
         <button onclick="pop.resetViewAndVisualizeTerrain()">Reset View</button>
       </div>
     </div>
