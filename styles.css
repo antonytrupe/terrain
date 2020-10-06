@@ -1,0 +1,72 @@
+ 
+      body{
+      margin: 0px auto;
+      width:900px;
+      font-size:1.5em;
+      }
+      p{
+      margin-block-start: 0;
+      }
+      h1,h2,h3,h4,h5,h6{
+      text-align:center;
+      margin-block-start: 0;
+      }
+      pre
+      {
+      overflow-x: auto;
+      }
+      .step_outer{
+      }
+      .step_inner
+      {
+      background-color:#eee;
+      margin:.5em;
+      padding:.5em;
+      clear:both;
+      overflow:auto;
+      }
+svg.scale, g.scale{
+display:block;
+height:20px;
+}
+.tick{}
+      canvas{
+      background-color:white;
+      border: thin black solid;
+      width:320px;
+      height:200px;
+      }
+      button, .button{
+      margin:.5em;
+      padding:.5em;
+      font-size: large;
+      border-radius: .5rem;
+      background-color: white;
+      vertical-align:top;
+      display:inline-block;
+      border:thin black solid;
+      }
+      .actions{
+      display:inline-block;
+      white-space: pre-wrap;
+      vertical-align: top;
+      }
+      .usage
+      {
+      display:inline;
+      }
+      code{
+      font-size: .8em;
+      background-color: #F7F7F7;
+      margin: 0;
+      padding: 0;
+      }
+      input[type=range][orient=vertical]
+      {
+      writing-mode: bt-lr; /* IE */
+      -webkit-appearance: slider-vertical; /* WebKit */
+      width: 8px;
+      height: 175px;
+      padding: 0 5px;
+      }
+    
