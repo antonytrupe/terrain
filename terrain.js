@@ -1,20 +1,31 @@
 class Terrain {
   constructor() {
-    const POINT_COUNT = 8;
-    const SEED = 996;
+    const POINT_COUNT = 1024;
+    const SEED = 0;
     var srand = new Math.seedrandom(SEED);
     var $this = this;
     /**[[lat,lon,height]] */
     var points = [];
-
-    this.random=function(min, max) {
+    var polygons;
+    var contours = [];
+    this.random = function(min, max) {
       min = min || 1;
       max = max || 100;
       return Math.round(srand() * (max - min) + 1 + min);
     };
-
-    this.percentile=function() {
-      return this.random(1, 100);
+    this.getPolygons = function() {
+      if (!polygons) {
+        console.log('missed cache');
+        polygons = d3.geoVoronoi().polygons($this.terrain.getPoints())
+      }
+      return polygons;
+    };
+    this.getContour = function(i) {
+      if (!contours || !contours[i]) {
+        console.log('missed cache');
+        contours[i] = d3.geoContour().contour($this.getHeightMap(), i);
+      }
+      return contours[i];
     };
     this.getPoints = function() {
       return points.map(x => [x[0], x[1]]);
@@ -22,7 +33,11 @@ class Terrain {
     /**
       call this if the order or location of the original points changes
     */
-    function update() {}
+    function update() {
+      //TODO noop
+      polygons = d3.geoVoronoi().polygons($this.getPoints())
+      contours = [];
+    }
     this.normalize = function() {
       var h = points.map(p => p[2])
       var lo = d3.min(h);
@@ -61,14 +76,16 @@ class Terrain {
       for (var i = 0; i < a.length; i++) {
         points[i][2] += a[i];
       }
+      update();
     };
-    this.mountain = function({
+
+    function mountain({
       center,
       height,
       width
     }) {
       center = center || randomPoint();
-      height = height || 1;
+      height = height || .6;
       width = width || (1 * Math.PI) * (1 / 8);
       var newvals = []
       newvals.length = points.length;
@@ -82,7 +99,7 @@ class Terrain {
         }
       }
       add(newvals);
-    };
+    }
     /** n number of mountains
     r radians, 2 pi radians is 360 degrees
      */
@@ -99,23 +116,15 @@ class Terrain {
       newvals.fill(0);
       for (var j = 0; j < n; j++) {
         var m = mounts[j];
-        for (var i = 0; i < points.length; i++) {
-          var p = points[i];
-          //var pp = [(p[0] + 90) / 180, (p[1] + 180) / 360];
-          //var mm = [(m[0] + 90) / 180, (m[1] + 180) / 360];
-          //need to normalize points from [-90|90,-180|180] to [0|1,0|1]
-          //y=(cos(pi*x)+1)/2
-          //distance in radians
-          var dr = d3.geoDistance(p, m);
-          if (dr < r) {
-            newvals[i] += (Math.cos(Math.PI * dr) + 1) / 2;
-          }
-        }
+        mountain({
+          'center': m,
+          'height': .6,
+          'width': r
+        });
       }
-      add(newvals);
     };
     this.getCellMesh = function() {
-      return voronoi.cellMesh;
+      return d3.geoVoronoi().cellMesh($this.points);
     };
     /**
     return the raw data of polygon vertice locations
@@ -160,45 +169,15 @@ class Terrain {
       }
       update();
     };
-    this.improvePointsFlat = function(n) {
-      var n = n || 1;
-      for (var i = 0; i < n; i++) {
-        points = voronoi().polygons(points).map(centroid);
-      }
-    };
+    this.generateMorePoints = function() {};
     this.improvePoints = function(n) {
       var n = n || 2;
       for (var i = 0; i < n; i++) {
-        var a = d3.geoVoronoi(points).polygons().features.map(centroidSphere);
+        var a = d3.geoVoronoi(points).polygons().features.map(a => d3.geoCentroid(a));
         points = a.map(_ => [_[0], _[1], 0]);
       }
       update();
     };
-
-    function centroidSphere(a) {
-      var c = d3.geoCentroid(a);
-      return c;
-    }
-
-    function voronoi() {
-      var w = $this.extent.width / 2;
-      var h = $this.extent.height / 2;
-      var a = d3.voronoi().extent([
-        [-w, -h],
-        [w, h]
-      ])(points);
-      return a;
-    }
-
-    function centroid(pts) {
-      var x = 0;
-      var y = 0;
-      for (var i = 0; i < pts.length; i++) {
-        x += pts[i][0];
-        y += pts[i][1];
-      }
-      return [x / pts.length, y / pts.length];
-    }
   }
 }
 
