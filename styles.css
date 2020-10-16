@@ -17,6 +17,10 @@
       }
       .step_outer{
       }
+.options label{
+	white-space:nowrap;
+	margin-right: .5em;
+}
       .step_inner
       {
       background-color:#eee;
@@ -33,8 +37,8 @@ height:20px;
       canvas{
       background-color:white;
       border: thin black solid;
-      width:320px;
-      height:200px;
+      width:800px;
+      height:500px;
       }
       button, .button{
       margin:.5em;
@@ -66,7 +70,7 @@ height:20px;
       writing-mode: bt-lr; /* IE */
       -webkit-appearance: slider-vertical; /* WebKit */
       width: 8px;
-      height: 175px;
+      height: 80px;
       padding: 0 5px;
       }
     

@@ -22,8 +22,8 @@
     <!-- support for contour functionality -->
     <script src="https://unpkg.com/d3-tricontour@0.1.0"></script>
     <!-- support for zoom and panning -->
-    <!--<script src="https://unpkg.com/d3-geo-zoom@1.4.0/dist/d3-geo-zoom.js"></script>-->
-    <script src="d3-geo-zoom.js"></script>
+    <script src="https://unpkg.com/d3-geo-zoom"></script>
+    <!--<script src="d3-geo-zoom.js"></script>-->
     <!-- for scale -->
     <script src="https://unpkg.com/d3-geo-scale-bar@1.0.2/build/d3-geo-scale-bar.min.js"></script>
     <!-- psudo random number generator that is seedable, nice for being able to reproduce issues -->
@@ -45,18 +45,23 @@
         <p>Everything</p>
         <p style="float:left;"></p>
         <div style="position: relative;float:left;">
-          <canvas  width="320" height="200" ></canvas>
+          <canvas  width="1000" height="625" ></canvas>
           <svg class="scale"><g class="scale"></g></svg>
         </div>
         <fieldset class="options"><legend>Options</legend>
           <label><input type="checkbox" name="scale" checked="true" onchange="ui.visualize();"></input>Scale</label>
-          <label><input type="checkbox" name="points" onchange="ui.visualize();"></input>Points</label>
-          <label><input type="checkbox" name="polygons" checked="true" onchange="ui.visualize();"></input>Polygons</label>
+          <label><input type="checkbox" name="points" checked="true" onchange="ui.visualize();"></input>Points</label>
+          <label><input type="checkbox" name="polygons"  onchange="ui.visualize();"></input>Polygons</label>
           <label><input type="checkbox" name="heightmap" checked="true" onchange="ui.visualize();"></input>Heightmap</label>
           <label><input type="checkbox" name="coast" checked="true" onchange="ui.visualize();"></input>Coast</label>
+          <label><input type="checkbox" name="graticules" checked="true" onchange="ui.visualize();"></input>Graticules</label>
+          <label><input type="range" name="fidelity" min="1" max="3" value="1" step="1">Fidelity</label>
+          <label><input type="checkbox" name="auto_generate">Auto-generate fidelity</label>
+
         </fieldset>
         <button onclick="ui.generateAndVisualize()">Generate Points</button>
         <button onclick="ui.generateGoodPointsAndVisualize()">Generate Good Points</button>
+        <button onclick="ui.generateMorePoints()">Generate Smaller Good Points</button>
 
         <button onclick="ui.improveAndVisualize()">Improve Points</button>
           <button onclick="ui.resetToFlat()">Reset to flat</button>
@@ -65,22 +70,23 @@
         <button onclick="ui.setSeaLevelToMedianAndVisualize()" title="find middle point and shift everything so the middle point is now 0.5">Set sea level to median</button>
         <button onclick="ui.normalizeAndVisualize()" title="0-1">normalize heightmap</button>
         <button onclick="ui.resetViewAndVisualize()">Reset View</button>
-        <div>
-          <span>
-            <input type="range" orient="vertical" id="height" name="height" min="-1" max="1" value="1" step=".05">
+        <fieldset>
             <label for="height">Height</label>
-          </span>
-          <span>
-            <input type="range" id="width" name="width" min="0" max="3.1" value="1" step=".1">
-            <label for="width">Width</label>
-          </span>
-        </div>
+            <input type="range" orient="vertical" id="height" name="height" min="-1" max="1" value="1" step=".05">
+ 
+             <label for="width">Width</label>
+            <input style="display:block;" type="range" id="width" name="width" min="0" max="3.1" value="1" step=".1">
+         </fieldset>
+
+
+
+
         <div class="button">
           <button onclick="ui.save()">Save</button>
           <input class="saveInput" style="margin:1em 1em 1em;width:8em;font-size:large;" />
         </div>
         <div class="button">
-          <button onclick="ui.loadAndVisualizeTerrain()">Load</button>
+          <button onclick="ui.loadAndVisualize()">Load</button>
           <select class="loadSelect" style="margin:1em 1em 1em;min-width:8em;font-size:large;"></select>
           <button onclick="ui.delete()">Delete</button>
         </div>

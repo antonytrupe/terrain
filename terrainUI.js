@@ -136,6 +136,16 @@ class TerrainUI {
         visualize();
       });
     };
+    this.generateMorePoints = function() {
+      //get the lat/long of the center of the screen
+      var center = projection.invert([canvas.width / 2, canvas.height / 2]);
+      //console.log('extent center:' + center);
+      var point = d3.geoDelaunay(this.terrain.getPoints()).find(center[0], center[1]);
+      var v_polygons = d3.geoVoronoi(this.terrain.getPoints()).polygons();
+      var polygon = v_polygons.features[point];
+      $this.terrain.generatePoints(null, polygon);
+      visualize();
+    };
     this.resetViewAndVisualize = function() {
       resetView();
       visualize();
@@ -271,10 +281,10 @@ class TerrainUI {
       });
     }
 
-    function visualizeOriginalPoints() {
+    function visualizeOriginalPoints(fidelity) {
       visualizeGeoJson({
         'type': 'MultiPoint',
-        'coordinates': $this.terrain.getPoints()
+        'coordinates': $this.terrain.getPoints(fidelity)
       });
     }
 
@@ -315,9 +325,7 @@ class TerrainUI {
       return projection;
     }
     this.resetToFlat = function() {
-      this.terrain.getHeightMap().map(p => {
-        p[2] = 0;
-      });
+      this.terrain.flatten();
       visualize();
     };
 
@@ -402,7 +410,9 @@ class TerrainUI {
     }
 
     function visualize() {
+      //console.log(projection.scale());
       var modes = getOptions();
+      //var extent=getExtent();
       clear();
       border();
       if (modes.heightmap) {
@@ -412,18 +422,55 @@ class TerrainUI {
         visualizeCoast();
       }
       if (modes.points) {
-        visualizeOriginalPoints();
+        visualizeOriginalPoints(options.fidelity);
       }
       if (modes.polygons) {
-        visualizePolygons();
+        visualizePolygons(options.fidelity);
+      }
+      if (modes.graticules) {
+        visualizeGraticuls();
       }
       visualizeScale(modes.scale);
     }
 
-    function visualizePolygons() {
-      var polygons = $this.terrain.getPolygons();
-      visualizeGeoJson(polygons);
+    function getExtent() {
+      //[,top left y]
+      var topMiddle = projection.invert([canvas.width / 2, 0]);
+      //[,bottom right y]
+      var bottomMiddle = projection.invert([canvas.width / 2, canvas.height]);
+      //[top left x,]
+      var middleLeft = projection.invert([0, canvas.height / 2]);
+      //[bottom right x,]
+      var middleRight = projection.invert([canvas.width, canvas.height / 2]);
+      //console.log(topMiddle);
+      var extent = [
+        [middleLeft[0], bottomMiddle[1]],
+        [middleRight[0], topMiddle[1]]
+      ];
+      //console.log(JSON.stringify(extent));
+      return extent;
     }
+
+    function visualizePolygons(extent) {
+      //TODO figure out where/how to get what level of polygons
+      var polygons = $this.terrain.getPolygons(extent);
+      visualizeGeoJson(polygons);
+      //var extent = getExtent();
+      //var visiblePoints = getVisiblePoints();
+      //console.log(visiblePoints);
+      //if the number of visible points is 1% or less, then show the next level of points
+      //if (visiblePoints.length < 100) {
+      //visualizePolygons2(visiblePoints);
+      //} else {
+      //console.log('higher');
+      //}
+      //console.log(JSON.stringify(extent));
+    }
+
+    function visualizePolygons2(visiblePoints) {
+      var polygons = $this.terrain.getPolygons2(visiblePoints);
+      visualizeGeoJson(polygons);
+    };
     this.visualize = function() {
       visualize();
     };
@@ -450,8 +497,8 @@ class TerrainUI {
     add lat/lon lines
     */
     function visualizeGraticuls(lat, lon) {
-      lat = lat || 30;
-      lon = lon || 30;
+      lat = lat || 45;
+      lon = lon || 45;
       //var projection = getProjection();
       var ctx = canvas.getContext("2d");
       var path = getPath();
