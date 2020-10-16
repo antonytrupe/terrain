@@ -1,6 +1,5 @@
-# Fantasy map generator
+# Fantasy map generator, on a globe
 
-This is code for generating fantasy maps, using the algorithm behind [@unchartedatlas][uncharted]. For more details, see [these notes][notes].
 
 ## Dependencies
 
